@@ -11,7 +11,7 @@ const git = (...args) => execFileSync('git', ['-C', root, ...args], {
 const fromCommit = (path) => JSON.parse(git('show', `HEAD:${path}`));
 const fail = (message) => { throw new Error(message); };
 const secretPattern = /-----BEGIN [A-Z ]*PRIVATE KEY-----|\bBearer\s+[A-Za-z0-9._~+/-]{16,}|\bsb_secret_[A-Za-z0-9_-]{12,}|\bsk-[A-Za-z0-9_-]{20,}|\beyJ[A-Za-z0-9_-]{12,}\.eyJ[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{8,}|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/iu;
-const repository = /^https:\/\/github\.com\/([A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?)\/([A-Za-z0-9._-]{1,100})\/?$/iu;
+const repository = /^https:\/\/github\.com\/([A-Za-z0-9](?:[A-Za-z0-9\-]{0,37}[A-Za-z0-9])?)\/([A-Za-z0-9._-]{1,100})\/?$/iu;
 const normalizedRepo = value => {
   const match = typeof value === 'string' && value.length <= 250 && repository.exec(value);
   if (!match) fail('GitHub HTTPS 저장소 주소를 origin으로 등록해 주세요.');

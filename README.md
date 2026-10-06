@@ -8,28 +8,71 @@
 2. 방어전 1단계 카드의 **Deploy** 버튼을 누릅니다. Vercel에 GitHub로 로그인하고, 새 저장소가 **본인 계정의 Public 저장소**인지 확인한 뒤 Deploy를 누릅니다.
 3. 배포가 끝나면 화면에 나온 `https://…vercel.app` 주소를 방어전 1단계 카드에 붙여넣고 제출합니다. 저장소 주소나 설정 파일은 적지 않습니다.
 
-배포가 끝나면 `/`에서 점령된 가상 자료실을 볼 수 있습니다. 메모는 Supabase `learning_notes` 테이블에서 서버 함수 `/api/notes`가 읽습니다. 정적 파일 `/data.json`에는 메모를 두지 않습니다. `/api/notes`는 로그인 없이 누구나 요청할 수 있는 공개 주소이므로, 서버 키를 숨겨도 메모 내용은 공개됩니다. 이 API는 자료 보호 장치가 아니며, 다음 단계에서 인증과 접근 제어를 추가해야 합니다. 1단계 접수와 심판 판정은 포털에서 확인합니다.
+## 현재 자료 흐름과 남은 약점
 
-Vercel 프로젝트의 **Settings → Environment Variables**에 `SUPABASE_URL`과 서버 전용 `SUPABASE_SECRET_KEY`를 설정하고 다시 배포하세요. 두 값은 서버 함수에서만 읽습니다. 브라우저 파일이나 API 응답에 키를 넣지 마세요. Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/20261006063758_create_learning_notes.sql)을 실행하면 가상 메모 네 건이 들어갑니다. 키 값은 코드나 문서에 기록하지 않습니다.
+화면은 Supabase `learning_notes` 테이블에서 메모를 읽는 Vercel 함수 `/api/notes`를 호출합니다. 정적 파일 `/data.json`에는 메모를 두지 않습니다. 서버 함수는 Vercel 환경변수 `SUPABASE_URL`과 서버 전용 `SUPABASE_SECRET_KEY`를 사용합니다. 두 값은 브라우저 파일, 응답, 로그, Git에 넣지 마세요. Vercel **Settings → Environment Variables**에 직접 설정하고 다시 배포합니다. 실제 키를 코드나 문서에 적지 마세요.
+
+Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/20261006063758_create_learning_notes.sql)을 실행하면 `owner_id uuid` 칸이 있는 `learning_notes` 테이블과 네 건의 가상 자료가 만들어집니다. 이 SQL은 `auth.users` 외래키를 만들지 않고, RLS를 켜며 `anon`·`authenticated`의 테이블 권한을 회수합니다.
+
+**알려진 약점:** `/api/notes`는 로그인 확인 없이 누구나 호출할 수 있는 공개 GET 주소입니다. 따라서 서버 키를 숨겨도 메모 제목과 본문은 공개됩니다. 호출 횟수 제한도 없으며 `owner_id`는 아직 사용하지 않습니다. 공개 API는 자료 보호가 아니므로 실제 개인 자료를 넣기 전에 인증, 소유자 기준 조회, 호출 제한을 추가해야 합니다.
 
 ## 시작 틀의 자동 처리
 
-`vercel.json`은 정적 결과물 `public`을 배포합니다. 빌드 명령 `npm run build`는 Vercel이 제공하는 GitHub 저장소 소유자·이름, 커밋 SHA, 배포 URL을 검증하고 `public/aleph.json`을 생성합니다. 이 값이 없으면 빌드가 실패하므로, 성공한 것처럼 빈 주소를 내보내지 않습니다. `aleph.json`의 내용만으로 저장소 소유권이나 방어 성공을 인정하지 않습니다. 심판이 공개 저장소의 실제 커밋과 배포된 자료를 따로 대조해야 합니다.
+`vercel.json`은 정적 결과물 `public`을 배포합니다. 빌드 명령 `npm run build`는 Vercel이 제공하는 GitHub 저장소 소유자·이름, 커밋 SHA, 배포 URL을 검증하고 `public/aleph.json`을 생성합니다. 필요한 값이 없으면 빌드가 실패하며, 성공한 것처럼 빈 주소를 내보내지 않습니다. `aleph.json`만으로 저장소 소유권이나 방어 성공을 인정하지 않습니다.
 
-`aleph.config.json`의 `repoUrl`과 `publicAppUrl`은 이전 제출 묶음 방식의 자리표시자입니다. 1단계에서는 학생이 편집하지 않습니다. 2단계 이후 코딩 도구가 필요한 설정과 보호 기능을 단계별로 작성합니다. `npm run bundle`과 `bundle-notes.json`도 1단계의 세 걸음에는 포함되지 않습니다.
+`aleph.config.json`의 `repoUrl`과 `publicAppUrl`이 실제 주소인지 확인하세요. 자리표시자라면 실제 배포를 확인할 수 없습니다. `npm run bundle`과 `bundle-notes.json`은 1단계의 세 걸음에는 포함되지 않습니다.
 
-로컬에서 정적 파일만 확인할 때는 `npm run build -- --local`을 사용합니다. 로컬 실행은 Vercel 배포나 심판 접수를 증명하지 않으며, Supabase 환경변수가 없으면 `/api/notes`는 메모를 반환하지 않습니다. `/data.json`은 계속 비어 있고 화면은 `/api/notes`를 요청합니다. 저장소의 `src/attack-check.mjs`는 1단계 자기 점검으로 `/data.json`을 요청하므로, 이 API 동작이나 자료 보호를 확인하는 시험이 아닙니다.
+로컬에서 정적 화면을 빌드할 때는 `npm run build -- --local`을 사용합니다. 로컬 빌드는 Vercel 배포, Supabase 연결, 심판 접수를 증명하지 않습니다. Supabase 환경변수 없이 로컬에서 `/api/notes`를 실행하면 메모는 반환되지 않습니다. `src/attack-check.mjs`의 1단계 점검은 `/data.json`을 요청하므로 이 API 동작이나 자료 보호를 확인하는 시험이 아닙니다.
 
 ## 가상 메모 노출 확인
 
-각 확인에서는 아래 네 문장을 그대로 검색합니다.
+아래 네 문장을 그대로 검색합니다.
 
 - `실습용 가상 과제 기록`
 - `실습용 가상 포트폴리오 기록`
 - `실습용 가상 리추얼 기록`
 - `실습용 가상 행정 기록`
 
-배포된 정적 파일은 실제 최신 Vercel 배포의 `/data.json` 응답을 열어 위 문장을 찾습니다. 브라우저에서는 주소 뒤에 `/data.json`을 붙여 열고 각 문장을 찾거나, 터미널에서 실제 배포 주소로 다음처럼 확인합니다.
+`data.json`의 `sampleMarker`는 메모 문장이 아닙니다. 텍스트 검색은 `-F` 옵션으로 문장을 글자 그대로 찾습니다.
+
+### 현재 작업본과 GitHub 최신 파일
+
+현재 작업본의 정적 데이터 파일을 검색합니다.
+
+```sh
+rg -n -F -e '실습용 가상 과제 기록' -e '실습용 가상 포트폴리오 기록' \
+  -e '실습용 가상 리추얼 기록' -e '실습용 가상 행정 기록' \
+  data.json public/data.json
+```
+
+GitHub의 최신 기본 브랜치와 비교하려면 먼저 원격을 갱신한 뒤 검색합니다.
+
+```sh
+git fetch origin main
+git grep -n -F -e '실습용 가상 과제 기록' -e '실습용 가상 포트폴리오 기록' \
+  -e '실습용 가상 리추얼 기록' -e '실습용 가상 행정 기록' \
+  origin/main -- data.json public/data.json
+```
+
+출력이 없고 검색 명령이 일치 항목 없음으로 끝나면 해당 파일에서 문장을 찾지 못한 것입니다. 원격 인증이나 fetch가 실패하면 GitHub 최신 파일 확인은 미완료로 기록합니다. 웹에서는 GitHub 저장소의 최신 `main`에서 두 파일을 각각 열어 **Raw** 내용을 확인할 수 있습니다.
+
+### 옛 공개 커밋
+
+최신 파일에서 문장이 사라져도 과거 커밋에 남아 있을 수 있습니다. 공개 저장소에 가져온 이력 전체에서 메모가 든 커밋을 검색합니다.
+
+```sh
+for commit in $(git rev-list --all); do
+  if git grep -q -F '실습용 가상' "$commit" -- data.json public/data.json; then
+    git log -1 --format='%h %ad %s' --date=short "$commit"
+  fi
+done
+```
+
+검색에 나온 커밋은 과거 공개 이력의 노출로 기록합니다. 공개 커밋에 문장이 남아 있는 동안 **과거 노출은 해소되지 않은 것**입니다. 커밋 이력을 다시 쓰거나 옛 파일을 지워도 이미 복제·캐시된 사본이 사라졌다고 단정하지 마세요.
+
+### 현재 배포 파일과 옛 배포
+
+실제 현재 배포 주소에서 정적 `/data.json`을 검색합니다.
 
 ```sh
 curl -fsS 'https://실제-배포주소.vercel.app/data.json' |
@@ -37,27 +80,17 @@ curl -fsS 'https://실제-배포주소.vercel.app/data.json' |
     -e '실습용 가상 리추얼 기록' -e '실습용 가상 행정 기록'
 ```
 
-출력이 없고 `rg`가 일치 항목 없음으로 끝나면 그 응답에서 문장을 찾지 못한 것입니다. 이는 확인한 배포의 정적 파일에 대한 결과일 뿐, 과거 배포나 공개된 커밋의 노출을 해소했다는 뜻이 아닙니다. `aleph.config.json`의 `publicAppUrl`이 실제 주소로 바뀌지 않았다면 배포 확인은 미실행으로 기록합니다.
+배포 주소는 Vercel에서 직접 확인합니다. `aleph.config.json`이 자리표시자이거나 요청이 실패하면 배포 확인은 미실행으로 기록합니다. Vercel Deployments 목록에서 옛 배포의 고유 주소도 각각 같은 방법으로 확인합니다. 접근이 막힌 옛 배포도 삭제된 것이 아니면 남아 있는 사본으로 기록합니다.
 
-GitHub에서는 저장소의 최신 `main`에서 `data.json`과 `public/data.json`을 각각 열어 **Raw** 내용을 확인하고 위 네 문장을 검색합니다. 터미널에서는 `git fetch origin main`으로 원격 최신 내용을 가져온 다음 아래 명령으로 두 파일을 검색할 수 있습니다.
+화면은 `/api/notes`로 메모를 읽습니다. 이 API는 의도적으로 네 건의 메모를 반환하므로 정적 파일 검색 결과와 별도로 확인하고, 공개 약점으로 기록합니다.
 
-```sh
-git grep -n -F -e '실습용 가상 과제 기록' -e '실습용 가상 포트폴리오 기록' \
-  -e '실습용 가상 리추얼 기록' -e '실습용 가상 행정 기록' \
-  origin/main -- data.json public/data.json
-```
+### 확인 기록 원칙
 
-### 이번 확인 기록
-
-- 로컬 작업본의 `data.json`, `public/data.json`: 네 문장 모두 검색 결과 없음.
-- 확인 가능한 마지막 `origin/main` 스냅샷 `6055be4`: 두 파일 각각에서 네 문장 모두 검색됨. 원격 `main`을 새로 확인하려 한 `git ls-remote origin refs/heads/main`은 인증 오류로 실패했으므로, 이 결과를 GitHub 서버의 현재 최신 상태라고 단정하지 않습니다.
-- 현재 배포 파일: `aleph.config.json`의 배포 주소가 자리표시자라 실제 주소를 조회하지 못함. 미확인.
-- 공개 API 약점: `/api/notes`는 인증 없이 호출 가능한 GET 주소이며 네 메모의 제목과 본문을 반환합니다. 서버 비밀키를 숨겨도 이 주소의 응답은 공개되므로 아직 자료 보호가 아닙니다.
-
-옛 공개 커밋이나 옛 배포가 남아 있으면 그 사본의 과거 노출은 해소된 것이 아닙니다. 실제 최신 배포와 GitHub 최신 `main`을 다시 검색하고 각각의 결과를 별도로 기록하세요. 검색 결과가 없어도 과거 사본의 삭제나 접근 차단을 확인하기 전에는 과거 노출이 해소됐다고 쓰지 마세요.
+- 최신 파일이나 현재 배포에서 검색 결과가 없더라도 그 확인 대상에서만 문장을 찾지 못한 것입니다.
+- 옛 공개 커밋이나 옛 배포에서 문장이 발견되면 과거 노출은 해소되지 않은 것입니다.
+- 옛 공개 커밋·배포가 하나라도 남아 있는 동안 과거 노출이 해소됐거나 안전하다고 쓰지 않습니다.
+- 공개 API가 메모를 반환하는 것은 검색 결과가 아니라 별도의 남은 약점으로 기록합니다.
 
 ## 다음 단계의 코딩 도구에 전달할 규칙
 
-[AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 2단계부터는 자료 보호를 구현할 때 `public/data.json`을 복사하는 1단계 빌드 흐름도 함께 바꿔야 합니다. 3단계 이후의 로그인, 허용 경로, 5단계의 원본 API 주소, 6단계 이후 정책 규칙은 해당 단계 원고와 계약에 맞춰 추가합니다. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다.
-
-`src/decider.mjs`와 `src/detect.mjs`의 로컬 시험은 반 엔진이나 운영 심판의 결과가 아닙니다. 1단계 이후 제출 묶음 계약 `aleph.defense.submission.v2`는 `scripts/bundle.mjs`에 남아 있으며, 코딩 도구가 해당 단계의 최신 배포 주소와 Git 원격을 맞춘 뒤 사용합니다.
+[AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다. `src/decider.mjs`와 `src/detect.mjs`의 로컬 시험은 반 엔진이나 운영 심판의 결과가 아닙니다.
