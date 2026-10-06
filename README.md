@@ -20,13 +20,19 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 
 현재 `aleph.config.json`은 3단계이며 실제 Vercel 앱 URL과 Supabase Auth 발급자 설정을 기록합니다. 빌드된 `/aleph.json`에는 설정된 단계 번호가 반영됩니다.
 
-**남은 약점:** 인증된 계정이면 누구나 현재 같은 네 개의 가상 메모를 볼 수 있습니다. `owner_id`별 자료 분리는 아직 없고 호출 횟수 제한도 없습니다. 이 단계는 로그인 여부를 확인하는 것이며, 타인 자료 접근은 별도 소유자 검증으로 막아야 합니다.
+로그인한 사용자는 화면에서 가상 메모를 추가·수정·삭제할 수 있습니다. `POST /api/notes`는 `{id?, title, body}`를 받고, `id`가 없으면 서버가 UUID를 만듭니다. `GET /api/notes`는 검증된 사용자 ID의 메모 배열을 반환하고, `GET`, `PUT`, `DELETE /api/notes/:id`는 한 메모를 처리합니다. 데이터베이스 `content` 열은 API의 `body` 필드로 변환됩니다.
+
+**4단계에서 해결할 약점:** 생성 시 서버가 검증한 사용자 ID를 `owner_id`로 저장하고 목록은 그 사용자 기준으로 조회하지만, ID를 직접 지정하는 단건 `GET`, `PUT`, `DELETE`는 `owner_id`를 확인하지 않습니다. 따라서 다른 로그인 계정이 메모 ID를 알면 읽거나 수정·삭제할 수 있습니다. 이는 의도적으로 남긴 접근 제어 취약점이며 실제 개인정보에는 사용하지 마세요.
+
+`aleph.config.json`의 `allowedRoutes`에는 `GET`·`POST /api/notes`와 `GET`·`PUT`·`DELETE /api/notes/:id` 경로가 기록되어 있습니다.
+
+3단계 로컬 확인은 `node --test test/notes-api.test.mjs test/notes-crud.test.mjs test/package-starter.test.mjs test/r5.test.mjs`로 실행하고, 정적 산출물은 `npm run build -- --local`로 만듭니다. 이 테스트는 모의 Supabase 요청을 확인하며 실제 계정·배포 시험을 대신하지 않습니다. 배포에서는 시크릿 창의 무로그인 요청이 401 JSON인지, 로그인 계정의 추가·수정·삭제가 동작하는지 별도로 확인하세요.
 
 ## 시작 틀의 자동 처리
 
 `vercel.json`은 정적 결과물 `public`을 배포합니다. 빌드 명령 `npm run build`는 Vercel이 제공하는 GitHub 저장소 소유자·이름, 커밋 SHA, 배포 URL을 검증하고 `public/aleph.json`을 생성합니다. 필요한 값이 없으면 빌드가 실패하며, 성공한 것처럼 빈 주소를 내보내지 않습니다. `aleph.json`만으로 저장소 소유권이나 방어 성공을 인정하지 않습니다.
 
-`aleph.config.json`의 `repoUrl`과 `publicAppUrl`이 실제 주소인지 확인하세요. 자리표시자라면 실제 배포를 확인할 수 없습니다. `npm run bundle`과 `bundle-notes.json`은 1단계의 세 걸음에는 포함되지 않습니다.
+`aleph.config.json`의 `repoUrl`과 `publicAppUrl`이 실제 주소인지 확인하세요. 자리표시자라면 실제 배포를 확인할 수 없습니다. 제출 묶음은 `npm run bundle`로 만들며, 실행 전에 개인 자료가 아닌 단계 설명을 `bundle-notes.json`에 준비해야 합니다. 생성되는 `artifacts/submission.json`과 `bundle-notes.json`은 커밋하지 않습니다.
 
 로컬에서 정적 화면을 빌드할 때는 `npm run build -- --local`을 사용합니다. 로컬 빌드는 Vercel 배포, Supabase 연결, 심판 접수를 증명하지 않습니다. Supabase 환경변수 없이 로컬에서 `/api/notes`를 실행하면 메모는 반환되지 않습니다. `src/attack-check.mjs`의 1단계 점검은 `/data.json`을 요청하므로 이 API 동작이나 자료 보호를 확인하는 시험이 아닙니다.
 

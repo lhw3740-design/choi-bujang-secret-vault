@@ -1,18 +1,31 @@
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
 const baseline = JSON.parse(await readFile(new URL('../package/baseline-functions.json', import.meta.url)));
 
+async function listFunctions(directory, prefix = '') {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = await Promise.all(entries.map(entry => {
+    const path = join(directory, entry.name);
+    const relative = join(prefix, entry.name).replaceAll('\\', '/');
+    return entry.isDirectory()
+      ? listFunctions(path, relative)
+      : /\.(?:m?js|ts)$/u.test(entry.name) ? [relative] : [];
+  }));
+  return files.flat().sort();
+}
+
 test('패키징 함수 기준표는 시작 틀의 실제 API와 일치한다', async () => {
-  const actual = (await readdir(new URL('../api/', import.meta.url)))
-    .filter(name => /\.(?:m?js|ts)$/u.test(name))
-    .map(name => join('api', name).replaceAll('\\', '/')).sort();
+  const actual = await listFunctions(fileURLToPath(new URL('../api/', import.meta.url)), 'api');
   assert.equal(baseline.version, 1);
   assert.equal(baseline.starter, 'ChoiTimo/aleph-defense-starter');
   assert.deepEqual(baseline.functions, []);
-  assert.deepEqual(baseline.allowedNew, ['api/ai.js', 'api/notes.js', 'api/threat-intel.js']);
+  assert.deepEqual(baseline.allowedNew, [
+    'api/ai.js', 'api/notes.js', 'api/notes/[id].js', 'api/threat-intel.js',
+  ]);
   assert.deepEqual(actual, [...baseline.functions, ...baseline.allowedNew].sort());
 });
 

@@ -3,10 +3,10 @@ import { test } from 'node:test';
 import { createNotesHandler } from '../api/notes.js';
 
 const rows = [
-  { title: '과제', content: '실습용 가상 과제 기록' },
-  { title: '포트폴리오', content: '실습용 가상 포트폴리오 기록' },
-  { title: '아침 리추얼', content: '실습용 가상 리추얼 기록' },
-  { title: '훈련 행정 자료', content: '실습용 가상 행정 기록' },
+  { id: '00000000-0000-4000-8000-000000000001', title: '과제', content: '실습용 가상 과제 기록' },
+  { id: '00000000-0000-4000-8000-000000000002', title: '포트폴리오', content: '실습용 가상 포트폴리오 기록' },
+  { id: '00000000-0000-4000-8000-000000000003', title: '아침 리추얼', content: '실습용 가상 리추얼 기록' },
+  { id: '00000000-0000-4000-8000-000000000004', title: '훈련 행정 자료', content: '실습용 가상 행정 기록' },
 ];
 
 function responseRecorder() {
@@ -32,10 +32,15 @@ test('GET returns four notes only after the authorization token is verified', as
           assert.equal(table, 'learning_notes');
           return {
             select(columns) {
-              assert.equal(columns, 'title,content');
+            assert.equal(columns, 'id,title,content');
               return this;
             },
-            async order(column, options) {
+          eq(column, value) {
+            assert.equal(column, 'owner_id');
+            assert.equal(value, 'verified-user-id');
+            return this;
+          },
+          async order(column, options) {
               assert.equal(column, 'id');
               assert.deepEqual(options, { ascending: true });
               return { data: rows, error: null };
@@ -67,7 +72,9 @@ test('GET returns four notes only after the authorization token is verified', as
   assert.equal(response.statusCode, 200);
   assert.equal(queried, true);
   assert.equal(response.headers['Cache-Control'], 'no-store');
-  assert.deepEqual(response.body, { notes: rows });
+  assert.deepEqual(response.body, rows.map(({ id, title, content }) => ({
+    id, title, body: content,
+  })));
   assert.equal(JSON.stringify(response.body).includes('server-only-test-key'), false);
 });
 
@@ -118,15 +125,15 @@ test('the configured login verifier rejects a request without a bearer token', a
   assert.equal(queried, false);
 });
 
-test('non-GET requests are rejected without creating a Supabase client', async () => {
+test('unsupported methods are rejected without creating a Supabase client', async () => {
   const handler = createNotesHandler({
     env: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_SECRET_KEY: 'server-only-test-key' },
     createClient() { assert.fail('client must not be created'); },
   });
   const response = responseRecorder();
-  await handler({ method: 'POST' }, response);
+  await handler({ method: 'PATCH' }, response);
   assert.equal(response.statusCode, 405);
-  assert.equal(response.headers.Allow, 'GET');
+  assert.equal(response.headers.Allow, 'GET, POST');
 });
 
 test('missing server configuration fails without exposing environment values', async () => {
