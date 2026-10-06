@@ -14,7 +14,13 @@
 
 Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/20261006063758_create_learning_notes.sql)을 실행하면 `owner_id uuid` 칸이 있는 `learning_notes` 테이블과 네 건의 가상 자료가 만들어집니다. 이 SQL은 `auth.users` 외래키를 만들지 않고, RLS를 켜며 `anon`·`authenticated`의 테이블 권한을 회수합니다.
 
-**알려진 약점:** `/api/notes`는 로그인 확인 없이 누구나 호출할 수 있는 공개 GET 주소입니다. 따라서 서버 키를 숨겨도 메모 제목과 본문은 공개됩니다. 호출 횟수 제한도 없으며 `owner_id`는 아직 사용하지 않습니다. 공개 API는 자료 보호가 아니므로 실제 개인 자료를 넣기 전에 인증, 소유자 기준 조회, 호출 제한을 추가해야 합니다.
+화면의 이메일·비밀번호 로그인과 로그아웃은 Supabase JS SDK를 사용합니다. 실제 로그인 전에 [public/supabase-config.js](public/supabase-config.js)에 Supabase Project URL과 **publishable key**를 직접 입력하세요. 두 값은 브라우저에 공개되는 값입니다. 비밀번호와 세션 토큰은 SDK가 처리하며 직접 만들지 않습니다.
+
+화면은 Supabase 세션의 access token을 `Authorization: Bearer`로 `/api/notes`에 보냅니다. 서버는 기존 `src/verify-login.mjs`를 사용해 Supabase 발급자, `authenticated` 대상, 만료 시각을 검증하고 실패하면 `401` JSON을 반환합니다. 브라우저가 보낸 user ID나 role은 사용하지 않습니다. `aleph.config.json`의 `identityProvider`에는 공개 가능한 issuer, audience, JWKS URL만 기록하며 비밀 키는 포함하지 않습니다.
+
+현재 `aleph.config.json`은 3단계이며 실제 Vercel 앱 URL과 Supabase Auth 발급자 설정을 기록합니다. 빌드된 `/aleph.json`에는 설정된 단계 번호가 반영됩니다.
+
+**남은 약점:** 인증된 계정이면 누구나 현재 같은 네 개의 가상 메모를 볼 수 있습니다. `owner_id`별 자료 분리는 아직 없고 호출 횟수 제한도 없습니다. 이 단계는 로그인 여부를 확인하는 것이며, 타인 자료 접근은 별도 소유자 검증으로 막아야 합니다.
 
 ## 시작 틀의 자동 처리
 
@@ -33,7 +39,7 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 - `실습용 가상 리추얼 기록`
 - `실습용 가상 행정 기록`
 
-`data.json`의 `sampleMarker`는 메모 문장이 아닙니다. 텍스트 검색은 `-F` 옵션으로 문장을 글자 그대로 찾습니다.
+1단계의 `sampleMarker` 확인 표시는 현재 단계 정적 응답에 포함하지 않습니다. 텍스트 검색은 `-F` 옵션으로 문장을 글자 그대로 찾습니다.
 
 ### 현재 작업본과 GitHub 최신 파일
 

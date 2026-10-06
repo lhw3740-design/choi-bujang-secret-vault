@@ -18,14 +18,17 @@ function responseRecorder() {
   };
 }
 
-test('GET returns four notes without returning the server key', async () => {
+test('GET returns four notes only after the authorization token is verified', async () => {
   let receivedConfig;
+  let queried = false;
   const handler = createNotesHandler({
     env: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_SECRET_KEY: 'server-only-test-key' },
+    config: { identityProvider: { issuer: 'https://example.supabase.co/auth/v1' } },
     createClient: (url, key, options) => {
       receivedConfig = { url, key, options };
       return {
         from(table) {
+          queried = true;
           assert.equal(table, 'learning_notes');
           return {
             select(columns) {
@@ -41,18 +44,78 @@ test('GET returns four notes without returning the server key', async () => {
         },
       };
     },
+    createVerifier: ({ config, supabaseSecretKey, supabaseClient }) => {
+      assert.equal(config.identityProvider.issuer, 'https://example.supabase.co/auth/v1');
+      assert.equal(supabaseSecretKey, 'server-only-test-key');
+      assert.ok(supabaseClient);
+      return async authorization => authorization === 'Bearer valid'
+        ? { kind: 'student', userId: 'verified-user-id' }
+        : null;
+    },
   });
   const response = responseRecorder();
-  await handler({ method: 'GET' }, response);
+  await handler({
+    method: 'GET',
+    headers: { authorization: 'Bearer valid' },
+    body: { userId: 'forged-user-id', role: 'admin' },
+  }, response);
 
   assert.equal(receivedConfig.key, 'server-only-test-key');
   assert.deepEqual(receivedConfig.options.auth, {
     autoRefreshToken: false, persistSession: false, detectSessionInUrl: false,
   });
   assert.equal(response.statusCode, 200);
+  assert.equal(queried, true);
   assert.equal(response.headers['Cache-Control'], 'no-store');
   assert.deepEqual(response.body, { notes: rows });
   assert.equal(JSON.stringify(response.body).includes('server-only-test-key'), false);
+});
+
+test('missing or invalid tokens are rejected before querying notes', async () => {
+  for (const authorization of [undefined, 'Bearer invalid']) {
+    let queried = false;
+    const handler = createNotesHandler({
+      env: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_SECRET_KEY: 'server-only-test-key' },
+      createClient: () => ({
+        from() {
+          queried = true;
+          assert.fail('notes must not be queried for an unverified request');
+        },
+      }),
+      createVerifier: () => async token => token === 'Bearer valid'
+        ? { kind: 'student', userId: 'verified-user-id' }
+        : null,
+    });
+    const response = responseRecorder();
+    await handler({
+      method: 'GET',
+      headers: authorization ? { authorization } : {},
+      body: { userId: 'forged-user-id', role: 'authenticated' },
+    }, response);
+
+    assert.equal(response.statusCode, 401);
+    assert.deepEqual(response.body, { error: 'AUTHENTICATION_REQUIRED' });
+    assert.equal(queried, false);
+  }
+});
+
+test('the configured login verifier rejects a request without a bearer token', async () => {
+  let queried = false;
+  const handler = createNotesHandler({
+    env: { SUPABASE_URL: 'https://example.supabase.co', SUPABASE_SECRET_KEY: 'server-only-test-key' },
+    createClient: () => ({
+      auth: { async getClaims() { assert.fail('claims must not be requested without a token'); } },
+      from() {
+        queried = true;
+        assert.fail('notes must not be queried without a token');
+      },
+    }),
+  });
+  const response = responseRecorder();
+  await handler({ method: 'GET', headers: {} }, response);
+  assert.equal(response.statusCode, 401);
+  assert.deepEqual(response.body, { error: 'AUTHENTICATION_REQUIRED' });
+  assert.equal(queried, false);
 });
 
 test('non-GET requests are rejected without creating a Supabase client', async () => {

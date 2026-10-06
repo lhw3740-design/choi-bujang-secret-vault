@@ -1,8 +1,12 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import appConfig from '../aleph.config.json' with { type: 'json' };
+import { createLoginVerifier } from '../src/verify-login.mjs';
 
 export function createNotesHandler({
   env = process.env,
   createClient = createSupabaseClient,
+  createVerifier = createLoginVerifier,
+  config = appConfig,
 } = {}) {
   return async function handler(request, response) {
     response.setHeader('Cache-Control', 'no-store');
@@ -21,6 +25,22 @@ export function createNotesHandler({
     const supabase = createClient(url, secretKey, {
       auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
     });
+    let verifyAuthorization;
+    try {
+      verifyAuthorization = createVerifier({
+        config,
+        supabaseSecretKey: secretKey,
+        supabaseClient: supabase,
+      });
+    } catch {
+      return response.status(500).json({ error: 'AUTHENTICATION_CONFIGURATION_ERROR' });
+    }
+
+    const identity = await verifyAuthorization(request.headers?.authorization);
+    if (!identity) {
+      return response.status(401).json({ error: 'AUTHENTICATION_REQUIRED' });
+    }
+
     const { data, error } = await supabase.from('learning_notes')
       .select('title,content')
       .order('id', { ascending: true });
