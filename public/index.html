@@ -99,7 +99,8 @@
         if (response.status === 401 || response.status === 403) {
           throw new Error('로그인이 확인되지 않아 자료를 변경할 수 없습니다.');
         }
-        throw new Error(data.error || `자료 요청 실패 (HTTP ${response.status})`);
+        const code = typeof data.code === 'string' ? ` · 코드 ${data.code}` : '';
+        throw new Error(`${data.error || '자료 요청 실패'}${code} (HTTP ${response.status})`);
       }
       return data;
     }

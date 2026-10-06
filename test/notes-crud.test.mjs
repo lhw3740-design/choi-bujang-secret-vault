@@ -68,6 +68,33 @@ test('POST accepts a valid supplied UUID and rejects malformed IDs', async () =>
   assert.deepEqual(invalidResponse.body, { error: 'INVALID_NOTE' });
 });
 
+test('POST reports a safe database error code without exposing database details', async () => {
+  const originalError = console.error;
+  const logged = [];
+  console.error = (...args) => logged.push(args);
+  try {
+    const supabase = {
+      from: () => ({
+        insert: async () => ({
+          error: { code: '42501', message: 'sensitive database detail' },
+        }),
+      }),
+    };
+    const response = responseRecorder();
+    await handleNotesCollection({
+      method: 'POST',
+      body: { title: '메모', body: '본문' },
+    }, response, { authenticateRequest: verifiedAuth(supabase) });
+
+    assert.equal(response.statusCode, 502);
+    assert.deepEqual(response.body, { error: 'NOTE_CREATE_FAILED', code: '42501' });
+    assert.equal(JSON.stringify(response.body).includes('sensitive database detail'), false);
+    assert.deepEqual(logged, [['note_create_failed', { code: '42501' }]]);
+  } finally {
+    console.error = originalError;
+  }
+});
+
 test('list GET filters by verified owner and maps database content to body', async () => {
   const row = { id: noteId, title: '내 메모', content: '본문' };
   const supabase = {

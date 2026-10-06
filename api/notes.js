@@ -47,7 +47,16 @@ export async function handleNotesCollection(request, response, {
     content: request.body.body,
     owner_id: auth.userId,
   });
-  if (error) return response.status(502).json({ error: 'NOTE_CREATE_FAILED' });
+  if (error) {
+    const code = typeof error.code === 'string' && /^[A-Z0-9_-]{1,32}$/u.test(error.code)
+      ? error.code
+      : undefined;
+    console.error('note_create_failed', { code: code ?? 'UNKNOWN' });
+    return response.status(502).json({
+      error: 'NOTE_CREATE_FAILED',
+      ...(code ? { code } : {}),
+    });
+  }
   return response.status(201).json({ id });
 }
 
