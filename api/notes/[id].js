@@ -32,6 +32,7 @@ export async function handleNoteItem(request, response, {
     const { data, error } = await auth.supabase.from('learning_notes')
       .select('id,title,content')
       .eq('id', id)
+      .eq('owner_id', auth.userId)
       .maybeSingle();
     if (error) return response.status(502).json({ error: 'NOTE_READ_FAILED' });
     if (!data) return response.status(404).json({ error: 'NOTE_NOT_FOUND' });
@@ -41,8 +42,13 @@ export async function handleNoteItem(request, response, {
   if (request.method === 'PUT') {
     if (invalidBody(request.body)) return response.status(400).json({ error: 'INVALID_NOTE' });
     const { data, error } = await auth.supabase.from('learning_notes')
-      .update({ title: request.body.title.trim(), content: request.body.body })
+      .update({
+        title: request.body.title.trim(),
+        content: request.body.body,
+        owner_id: auth.userId,
+      })
       .eq('id', id)
+      .eq('owner_id', auth.userId)
       .select('id,title,content')
       .maybeSingle();
     if (error) return response.status(502).json({ error: 'NOTE_UPDATE_FAILED' });
@@ -53,6 +59,7 @@ export async function handleNoteItem(request, response, {
   const { data, error } = await auth.supabase.from('learning_notes')
     .delete()
     .eq('id', id)
+    .eq('owner_id', auth.userId)
     .select('id')
     .maybeSingle();
   if (error) return response.status(502).json({ error: 'NOTE_DELETE_FAILED' });

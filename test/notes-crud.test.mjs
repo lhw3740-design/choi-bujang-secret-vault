@@ -126,75 +126,122 @@ test('list GET filters by verified owner and maps database content to body', asy
   assert.deepEqual(response.body, [{ id: noteId, title: '내 메모', body: '본문' }]);
 });
 
-test('item GET, PUT, and DELETE use IDs without owner filtering', async () => {
-  let stored = { id: noteId, title: '제목', content: '원문' };
-  const operations = [];
-  const supabase = {
-    from: table => {
-      assert.equal(table, 'learning_notes');
-      let operation;
-      let update;
-      return {
-        select(columns) {
-          assert.ok(['id,title,content', 'id'].includes(columns));
-          operation ??= 'GET';
-          return this;
-        },
-        eq(column, value) {
-          assert.equal(column, 'id');
-          assert.equal(value, noteId);
-          return this;
-        },
-        maybeSingle: async () => {
-          if (operation === 'PUT') stored = { ...stored, ...update };
-          const data = stored;
-          if (operation === 'DELETE') stored = null;
-          operations.push(operation);
-          return { data, error: null };
-        },
-        update(values) {
-          operation = 'PUT';
-          update = values;
-          return this;
-        },
-        delete() {
-          operation = 'DELETE';
-          return this;
-        },
-      };
+function makeOwnedNoteClient(initialRow) {
+  let stored = initialRow;
+  const queries = [];
+  return {
+    queries,
+    get row() { return stored; },
+    client: {
+      from(table) {
+        assert.equal(table, 'learning_notes');
+        let operation;
+        let values;
+        let selection;
+        const filters = [];
+        const query = {
+          select(columns) {
+            selection = columns;
+            operation ??= 'GET';
+            return query;
+          },
+          eq(column, value) {
+            filters.push([column, value]);
+            return query;
+          },
+          update(nextValues) {
+            operation = 'PUT';
+            values = nextValues;
+            return query;
+          },
+          delete() {
+            operation = 'DELETE';
+            return query;
+          },
+          async maybeSingle() {
+            queries.push({ operation, filters, values, selection });
+            const matches = stored && filters.every(([column, value]) => stored[column] === value);
+            if (!matches) return { data: null, error: null };
+            if (operation === 'PUT') stored = { ...stored, ...values };
+            const data = stored;
+            if (operation === 'DELETE') stored = null;
+            return { data, error: null };
+          },
+        };
+        return query;
+      },
     },
   };
+}
+
+test('owner can GET, PUT, and DELETE their own note', async () => {
+  const database = makeOwnedNoteClient({
+    id: noteId, owner_id: userId, title: '제목', content: '원문',
+  });
+  const authenticateRequest = verifiedAuth(database.client, userId);
 
   const getResponse = responseRecorder();
   await handleNoteItem({ method: 'GET' }, getResponse, {
-    id: noteId, authenticateRequest: verifiedAuth(supabase, '33333333-3333-4333-8333-333333333333'),
+    id: noteId, authenticateRequest,
   });
+  assert.equal(getResponse.statusCode, 200);
   assert.deepEqual(getResponse.body, { id: noteId, title: '제목', body: '원문' });
 
   const putResponse = responseRecorder();
   await handleNoteItem({
-    method: 'PUT', body: { title: '수정 제목', body: '수정 본문' },
-  }, putResponse, {
-    id: noteId,
-    authenticateRequest: verifiedAuth(supabase, '33333333-3333-4333-8333-333333333333'),
-  });
+    method: 'PUT',
+    body: { title: '수정 제목', body: '수정 본문', owner_id: '33333333-3333-4333-8333-333333333333' },
+  }, putResponse, { id: noteId, authenticateRequest });
   assert.equal(putResponse.statusCode, 200);
   assert.deepEqual(putResponse.body, { id: noteId, title: '수정 제목', body: '수정 본문' });
+  assert.equal(database.row.owner_id, userId);
+  assert.deepEqual(database.queries[1].values, {
+    title: '수정 제목', content: '수정 본문', owner_id: userId,
+  });
 
   const deleteResponse = responseRecorder();
   await handleNoteItem({ method: 'DELETE' }, deleteResponse, {
-    id: noteId, authenticateRequest: verifiedAuth(supabase, '33333333-3333-4333-8333-333333333333'),
+    id: noteId, authenticateRequest,
   });
   assert.equal(deleteResponse.statusCode, 204);
   assert.equal(deleteResponse.ended, true);
 
   const missingResponse = responseRecorder();
   await handleNoteItem({ method: 'GET' }, missingResponse, {
-    id: noteId, authenticateRequest: verifiedAuth(supabase, '33333333-3333-4333-8333-333333333333'),
+    id: noteId, authenticateRequest,
   });
   assert.equal(missingResponse.statusCode, 404);
   assert.deepEqual(missingResponse.body, { error: 'NOTE_NOT_FOUND' });
-  assert.deepEqual(operations, ['GET', 'PUT', 'DELETE', 'GET']);
+
+  for (const query of database.queries) {
+    assert.ok(query.filters.some(([column, value]) => column === 'id' && value === noteId));
+    assert.ok(query.filters.some(([column, value]) => column === 'owner_id' && value === userId));
+  }
+});
+
+test('another owner gets 404 and cannot GET, PUT, or DELETE a note', async () => {
+  const otherUserId = '33333333-3333-4333-8333-333333333333';
+  for (const method of ['GET', 'PUT', 'DELETE']) {
+    const database = makeOwnedNoteClient({
+      id: noteId, owner_id: userId, title: 'A 제목', content: 'A 본문',
+    });
+    const response = responseRecorder();
+    await handleNoteItem({
+      method,
+      body: { title: '탈취 제목', body: '탈취 본문', owner_id: otherUserId },
+    }, response, {
+      id: noteId,
+      authenticateRequest: verifiedAuth(database.client, otherUserId),
+    });
+    assert.equal(response.statusCode, 404, `${method} must hide a note owned by another user`);
+    assert.deepEqual(response.body, { error: 'NOTE_NOT_FOUND' });
+    assert.deepEqual(database.row, {
+      id: noteId, owner_id: userId, title: 'A 제목', content: 'A 본문',
+    });
+    assert.ok(database.queries[0].filters.some(
+      ([column, value]) => column === 'owner_id' && value === otherUserId,
+    ));
+  }
 });
 
 test('item route rejects unauthenticated requests before touching the table', async () => {

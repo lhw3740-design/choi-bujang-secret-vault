@@ -22,11 +22,11 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 
 로그인한 사용자는 화면에서 가상 메모를 추가·수정·삭제할 수 있습니다. `POST /api/notes`는 `{id?, title, body}`를 받고, `id`가 없으면 서버가 UUID를 만듭니다. `GET /api/notes`는 검증된 사용자 ID의 메모 배열을 반환하고, `GET`, `PUT`, `DELETE /api/notes/:id`는 한 메모를 처리합니다. 데이터베이스 `content` 열은 API의 `body` 필드로 변환됩니다.
 
-**4단계에서 해결할 약점:** 생성 시 서버가 검증한 사용자 ID를 `owner_id`로 저장하고 목록은 그 사용자 기준으로 조회하지만, ID를 직접 지정하는 단건 `GET`, `PUT`, `DELETE`는 `owner_id`를 확인하지 않습니다. 따라서 다른 로그인 계정이 메모 ID를 알면 읽거나 수정·삭제할 수 있습니다. 이는 의도적으로 남긴 접근 제어 취약점이며 실제 개인정보에는 사용하지 마세요.
+4단계에서는 목록과 단건 `GET`, `PUT`, `DELETE` 모두 서버가 검증한 사용자 ID를 `owner_id`와 비교합니다. 추가 시에도 요청 본문의 소유자 값은 사용하지 않고 검증된 ID를 저장합니다. 수정은 기존 행과 변경 후 행 모두 본인 소유로 제한합니다. 다른 계정의 메모는 `404`로 처리합니다.
 
 `aleph.config.json`의 `allowedRoutes`에는 `GET`·`POST /api/notes`와 `GET`·`PUT`·`DELETE /api/notes/:id` 경로가 기록되어 있습니다.
 
-3단계 로컬 확인은 `node --test test/notes-api.test.mjs test/notes-crud.test.mjs test/package-starter.test.mjs test/r5.test.mjs`로 실행하고, 정적 산출물은 `npm run build -- --local`로 만듭니다. 이 테스트는 모의 Supabase 요청을 확인하며 실제 계정·배포 시험을 대신하지 않습니다. `npm run bundle`은 실제 배포의 `/api/notes`에 인증 없는 GET 요청을 보내 그 응답 결과만 자기 점검에 기록합니다. 배포에서는 시크릿 창의 무로그인 요청이 401 JSON인지, 로그인 계정의 추가·수정·삭제가 동작하는지 별도로 확인하세요.
+4단계 로컬 확인은 `node --test test/notes-api.test.mjs test/notes-crud.test.mjs test/package-starter.test.mjs test/r5.test.mjs`로 실행하고, 정적 산출물은 `npm run build -- --local`로 만듭니다. 이 테스트는 모의 Supabase 요청을 확인하며 실제 계정·배포 시험을 대신하지 않습니다. `npm run bundle`은 실제 배포의 `/api/notes`에 인증 없는 GET 요청을 보내 그 응답 결과만 자기 점검에 기록합니다. 배포에서는 A와 B가 각자 자기 메모만 읽고 바꿀 수 있는지, 상대 메모가 거부되는지 직접 확인하세요.
 
 ## 시작 틀의 자동 처리
 
