@@ -62,7 +62,7 @@ test('first attack check reads public data.json without credentials', async () =
   }
 });
 
-test('third-stage attack check records the unauthenticated API response only', async () => {
+test('third- and fourth-stage attack checks record the unauthenticated API response only', async () => {
   const originalFetch = globalThis.fetch;
   let requestUrl;
   let options;
@@ -72,20 +72,22 @@ test('third-stage attack check records the unauthenticated API response only', a
       options = init;
       return Response.json({ error: 'AUTHENTICATION_REQUIRED' }, { status: 401 });
     };
-    const [result] = await runAttackChecks({
-      ...config,
-      step: 3,
-      sampleMarker: undefined,
-    });
-    assert.equal(requestUrl, 'https://student-defense.vercel.app/api/notes');
-    assert.equal(options.method, 'GET');
-    assert.equal(options.redirect, 'error');
-    assert.equal('authorization' in options.headers, false);
-    assert.deepEqual(result, {
-      attackId: 'anonymous_note_read',
-      expected: '비로그인 목록 요청이 401 또는 403 JSON 오류로 거부됨',
-      observed: '인증 없는 GET /api/notes: HTTP 401, JSON 오류 응답 확인',
-    });
+    for (const step of [3, 4]) {
+      const [result] = await runAttackChecks({
+        ...config,
+        step,
+        sampleMarker: undefined,
+      });
+      assert.equal(requestUrl, 'https://student-defense.vercel.app/api/notes');
+      assert.equal(options.method, 'GET');
+      assert.equal(options.redirect, 'error');
+      assert.equal('authorization' in options.headers, false);
+      assert.deepEqual(result, {
+        attackId: 'anonymous_note_read',
+        expected: '비로그인 목록 요청이 401 또는 403 JSON 오류로 거부됨',
+        observed: '인증 없는 GET /api/notes: HTTP 401, JSON 오류 응답 확인',
+      });
+    }
   } finally {
     globalThis.fetch = originalFetch;
   }
