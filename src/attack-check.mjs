@@ -1,7 +1,9 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (config.step !== 1) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (config.step !== 1 && config.step !== 3) {
+    throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  }
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -11,6 +13,35 @@ export async function runAttackChecks(config) {
   if (app.protocol !== 'https:' || app.username || app.password || app.search || app.hash
       || app.pathname !== '/' || app.hostname.endsWith('.example')) {
     throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
+  }
+  if (config.step === 3) {
+    const response = await fetch(new URL('/api/notes', app), {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+      redirect: 'error',
+      signal: AbortSignal.timeout(10000),
+    });
+    const responseText = await response.text();
+    let body;
+    try {
+      body = JSON.parse(responseText);
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+      return [{
+        attackId: 'anonymous_note_read',
+        expected: '비로그인 목록 요청이 401 또는 403 JSON 오류로 거부됨',
+        observed: `인증 없는 GET /api/notes: HTTP ${response.status}, JSON 오류 응답 아님`,
+      }];
+    }
+    const rejected = (response.status === 401 || response.status === 403)
+      && typeof body?.error === 'string' && body.error.length > 0;
+    return [{
+      attackId: 'anonymous_note_read',
+      expected: '비로그인 목록 요청이 401 또는 403 JSON 오류로 거부됨',
+      observed: rejected
+        ? `인증 없는 GET /api/notes: HTTP ${response.status}, JSON 오류 응답 확인`
+        : `인증 없는 GET /api/notes: HTTP ${response.status}, ${typeof body?.error === 'string' ? 'JSON 오류 응답' : '거부 오류 없는 JSON 응답'}`,
+    }];
   }
   if (typeof config.sampleMarker !== 'string' || !config.sampleMarker) throw new Error('가상 메모의 확인 표시를 넣어 주세요.');
   const response = await fetch(new URL('/data.json', app), {

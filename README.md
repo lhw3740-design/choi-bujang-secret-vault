@@ -26,7 +26,7 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 
 `aleph.config.json`의 `allowedRoutes`에는 `GET`·`POST /api/notes`와 `GET`·`PUT`·`DELETE /api/notes/:id` 경로가 기록되어 있습니다.
 
-3단계 로컬 확인은 `node --test test/notes-api.test.mjs test/notes-crud.test.mjs test/package-starter.test.mjs test/r5.test.mjs`로 실행하고, 정적 산출물은 `npm run build -- --local`로 만듭니다. 이 테스트는 모의 Supabase 요청을 확인하며 실제 계정·배포 시험을 대신하지 않습니다. 배포에서는 시크릿 창의 무로그인 요청이 401 JSON인지, 로그인 계정의 추가·수정·삭제가 동작하는지 별도로 확인하세요.
+3단계 로컬 확인은 `node --test test/notes-api.test.mjs test/notes-crud.test.mjs test/package-starter.test.mjs test/r5.test.mjs`로 실행하고, 정적 산출물은 `npm run build -- --local`로 만듭니다. 이 테스트는 모의 Supabase 요청을 확인하며 실제 계정·배포 시험을 대신하지 않습니다. `npm run bundle`은 실제 배포의 `/api/notes`에 인증 없는 GET 요청을 보내 그 응답 결과만 자기 점검에 기록합니다. 배포에서는 시크릿 창의 무로그인 요청이 401 JSON인지, 로그인 계정의 추가·수정·삭제가 동작하는지 별도로 확인하세요.
 
 ## 시작 틀의 자동 처리
 
