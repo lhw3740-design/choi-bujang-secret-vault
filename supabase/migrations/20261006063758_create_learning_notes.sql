@@ -1,3 +1,5 @@
+begin;
+
 create table if not exists public.learning_notes (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid,
@@ -6,7 +8,8 @@ create table if not exists public.learning_notes (
 );
 
 alter table public.learning_notes enable row level security;
-revoke all privileges on table public.learning_notes from anon, authenticated;
+revoke all privileges on table public.learning_notes from public, anon, authenticated;
+grant select, insert, update, delete on table public.learning_notes to service_role;
 
 insert into public.learning_notes (id, title, content)
 values
@@ -17,3 +20,7 @@ values
 on conflict (id) do update
 set title = excluded.title,
     content = excluded.content;
+
+notify pgrst, 'reload schema';
+
+commit;
