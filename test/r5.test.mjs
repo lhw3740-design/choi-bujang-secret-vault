@@ -38,6 +38,26 @@ test('build identity preserves the configured defense step', () => {
   assert.equal('sampleMarker' in identity, false);
 });
 
+test('fifth-stage build identity includes only a valid query-free HTTPS original API URL', () => {
+  const originalApiUrl = 'https://example.supabase.co/rest/v1/learning_notes';
+  const identity = deploymentIdentity(env, {
+    ...config,
+    step: 5,
+    originalApiUrl,
+  });
+  assert.equal(identity.originalApiUrl, originalApiUrl);
+  assert.throws(() => deploymentIdentity(env, {
+    ...config,
+    step: 5,
+    originalApiUrl: 'https://example.supabase.co/rest/v1/learning_notes?select=*',
+  }));
+  assert.throws(() => deploymentIdentity(env, {
+    ...config,
+    step: 5,
+    originalApiUrl: 'http://example.supabase.co/rest/v1/learning_notes',
+  }));
+});
+
 test('first attack check reads public data.json without credentials', async () => {
   const originalFetch = globalThis.fetch;
   let requestUrl;
