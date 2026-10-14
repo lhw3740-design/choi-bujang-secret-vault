@@ -18,7 +18,7 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 
 화면은 Supabase 세션의 access token을 `Authorization: Bearer`로 `/api/notes`에 보냅니다. 서버는 기존 `src/verify-login.mjs`를 사용해 Supabase 발급자, `authenticated` 대상, 만료 시각을 검증하고 실패하면 `401` JSON을 반환합니다. 브라우저가 보낸 user ID나 role은 사용하지 않습니다. `aleph.config.json`의 `identityProvider`에는 공개 가능한 issuer, audience, JWKS URL만 기록하며 비밀 키는 포함하지 않습니다.
 
-현재 `aleph.config.json`은 5단계이며 실제 Vercel 앱 URL, Supabase Auth 발급자 설정, 원본 자료 REST 경로를 기록합니다. 빌드된 `/aleph.json`에는 설정된 단계 번호가 반영됩니다.
+현재 `aleph.config.json`은 6단계이며 실제 Vercel 앱 URL, Supabase Auth 발급자 설정, 원본 자료 REST 경로를 기록합니다. 빌드된 `/aleph.json`에는 설정된 단계 번호가 반영됩니다.
 
 로그인한 사용자는 화면에서 가상 메모를 추가·수정·삭제할 수 있습니다. `POST /api/notes`는 `{id?, title, body}`를 받고, `id`가 없으면 서버가 UUID를 만듭니다. `GET /api/notes`는 검증된 사용자 ID의 메모 배열을 반환하고, `GET`, `PUT`, `DELETE /api/notes/:id`는 한 메모를 처리합니다. 데이터베이스 `content` 열은 API의 `body` 필드로 변환됩니다.
 
@@ -26,9 +26,11 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 
 5단계에서는 화면의 메모 자료 요청을 `/api/notes` 및 `/api/notes/:id` 서버 함수로 모읍니다. 함수는 서버 전용 `SUPABASE_SECRET_KEY`로 데이터베이스를 사용하고, 로그인 검증과 소유자 제한을 유지합니다. `aleph.config.json`의 `originalApiUrl`은 쿼리 없는 Supabase REST 자료 경로이며, 빌드가 이를 공개 배포 메타데이터 `/aleph.json`에도 포함합니다. `src/attack-check.mjs`의 제출 자기 점검은 해당 경로에 공개 publishable key로 익명 요청을 보내 실제 응답 상태만 기록합니다. 이 점검은 심판 판정이 아니며, 학습 DB 권한 SQL의 실행이나 실제 A 계정 화면 확인을 대신하지 않습니다.
 
+6단계에서는 [src/decider.mjs](src/decider.mjs)의 `device_registered` 규칙이 판정 요청의 `deviceRegistered`가 `true`일 때만 자료 읽기를 허용합니다. 값이 `false`이거나 누락되면 `device_not_registered`로 거부합니다. 요청의 가명 사용자 식별자는 `subjectId`, 확인된 기기 ID는 `deviceId`이며 판정기는 임의의 사용자·기기 필드를 만들거나 인증서·개인키를 저장하지 않습니다. 실행 확인은 `npm run decider:test`이며, 이는 가상 요청 연습이지 실제 기기 등록이나 심판 판정이 아닙니다.
+
 `aleph.config.json`의 `allowedRoutes`에는 `GET`·`POST /api/notes`와 `GET`·`PUT`·`DELETE /api/notes/:id` 경로가 기록되어 있습니다.
 
-4·5단계 로컬 확인은 `node --test test/notes-api.test.mjs test/notes-crud.test.mjs test/package-starter.test.mjs test/r5.test.mjs`로 실행하고, 정적 산출물은 `npm run build -- --local`로 만듭니다. 이 테스트는 모의 Supabase 요청을 확인하며 실제 계정·배포 시험을 대신하지 않습니다. `npm run bundle`은 실제 배포 `/api/notes`의 비로그인 요청과 설정된 원본 REST 경로의 익명 요청을 실행하고 그 응답 결과만 자기 점검에 기록합니다. 이 점검은 A/B 간 소유자 격리나 A의 화면 CRUD를 확인하지 않습니다. 배포에서는 A가 자기 메모를 읽고 추가·수정·삭제할 수 있는지, 원본 직접 요청이 거부되는지 별도로 확인하세요.
+4~6단계 로컬 확인은 `node --test test/notes-api.test.mjs test/notes-crud.test.mjs test/package-starter.test.mjs test/r5.test.mjs`로 실행하고, 정적 산출물은 `npm run build -- --local`로 만듭니다. 판정기 가상 요청 순서는 `npm run decider:test`로 실행합니다. 이 테스트들은 모의 요청을 확인하며 실제 계정·기기 등록·배포·심판 시험을 대신하지 않습니다. `npm run bundle`은 실제 배포 `/api/notes`의 비로그인 요청과 설정된 원본 REST 경로의 익명 요청을 실행하고 그 응답 결과만 자기 점검에 기록합니다. 이 점검은 A/B 간 소유자 격리나 A의 화면 CRUD를 확인하지 않습니다. 배포에서는 A가 자기 메모를 읽고 추가·수정·삭제할 수 있는지, 원본 직접 요청이 거부되는지 별도로 확인하세요.
 
 ## 시작 틀의 자동 처리
 

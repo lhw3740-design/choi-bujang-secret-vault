@@ -114,40 +114,42 @@ test('third- and fourth-stage attack checks record the unauthenticated API respo
   }
 });
 
-test('fifth-stage attack check sends anonymous requests to the original API and notes function', async () => {
+test('fifth- and sixth-stage attack checks send anonymous requests to the original API and notes function', async () => {
   const originalFetch = globalThis.fetch;
-  const requests = [];
   try {
-    globalThis.fetch = async (url, init) => {
-      requests.push({ url: String(url), options: init });
-      return String(url).includes('supabase.co')
-        ? Response.json({ message: 'permission denied', details: 'not included in report' }, {
-          status: 403,
-        })
-        : Response.json({ error: 'AUTHENTICATION_REQUIRED' }, { status: 401 });
-    };
-    const results = await runAttackChecks({
-      ...config,
-      step: 5,
-      originalApiUrl: 'https://example.supabase.co/rest/v1/learning_notes',
-      sampleMarker: undefined,
-    });
-    assert.equal(requests[0].url, 'https://example.supabase.co/rest/v1/learning_notes');
-    assert.equal(requests[0].options.method, 'GET');
-    assert.equal(requests[0].options.headers.apikey, supabasePublishableKey);
-    assert.equal(requests[0].options.redirect, 'error');
-    assert.equal(requests[1].url, 'https://student-defense.vercel.app/api/notes');
-    assert.equal(requests[1].options.method, 'GET');
-    assert.equal('authorization' in requests[1].options.headers, false);
-    assert.deepEqual(results, [{
-      attackId: 'anonymous_original_read',
-      expected: 'anon 키의 원본 자료 요청이 권한 오류로 거부됨',
-      observed: '익명 원본 GET: HTTP 403, JSON 오류 응답 확인',
-    }, {
-      attackId: 'anonymous_note_read',
-      expected: '비로그인 목록 요청이 401 또는 403 JSON 오류로 거부됨',
-      observed: '인증 없는 GET /api/notes: HTTP 401, JSON 오류 응답 확인',
-    }]);
+    for (const step of [5, 6]) {
+      const requests = [];
+      globalThis.fetch = async (url, init) => {
+        requests.push({ url: String(url), options: init });
+        return String(url).includes('supabase.co')
+          ? Response.json({ message: 'permission denied', details: 'not included in report' }, {
+            status: 403,
+          })
+          : Response.json({ error: 'AUTHENTICATION_REQUIRED' }, { status: 401 });
+      };
+      const results = await runAttackChecks({
+        ...config,
+        step,
+        originalApiUrl: 'https://example.supabase.co/rest/v1/learning_notes',
+        sampleMarker: undefined,
+      });
+      assert.equal(requests[0].url, 'https://example.supabase.co/rest/v1/learning_notes');
+      assert.equal(requests[0].options.method, 'GET');
+      assert.equal(requests[0].options.headers.apikey, supabasePublishableKey);
+      assert.equal(requests[0].options.redirect, 'error');
+      assert.equal(requests[1].url, 'https://student-defense.vercel.app/api/notes');
+      assert.equal(requests[1].options.method, 'GET');
+      assert.equal('authorization' in requests[1].options.headers, false);
+      assert.deepEqual(results, [{
+        attackId: 'anonymous_original_read',
+        expected: 'anon 키의 원본 자료 요청이 권한 오류로 거부됨',
+        observed: '익명 원본 GET: HTTP 403, JSON 오류 응답 확인',
+      }, {
+        attackId: 'anonymous_note_read',
+        expected: '비로그인 목록 요청이 401 또는 403 JSON 오류로 거부됨',
+        observed: '인증 없는 GET /api/notes: HTTP 401, JSON 오류 응답 확인',
+      }]);
+    }
   } finally {
     globalThis.fetch = originalFetch;
   }

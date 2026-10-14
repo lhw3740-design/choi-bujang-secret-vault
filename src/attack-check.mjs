@@ -3,7 +3,8 @@ import { supabasePublishableKey } from '../public/supabase-config.js';
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (config.step !== 1 && config.step !== 3 && config.step !== 4 && config.step !== 5) {
+  if (config.step !== 1 && config.step !== 3 && config.step !== 4
+      && config.step !== 5 && config.step !== 6) {
     throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   }
   let app;
@@ -16,16 +17,16 @@ export async function runAttackChecks(config) {
       || app.pathname !== '/' || app.hostname.endsWith('.example')) {
     throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
   }
-  if (config.step === 5) {
+  if (config.step === 5 || config.step === 6) {
     let originalApi;
     try {
       originalApi = new URL(config.originalApiUrl);
     } catch {
-      throw new Error('5단계 원본 자료 API의 HTTPS 주소를 aleph.config.json에 넣어 주세요.');
+      throw new Error('5단계부터 원본 자료 API의 HTTPS 주소를 aleph.config.json에 넣어 주세요.');
     }
     if (originalApi.protocol !== 'https:' || originalApi.username || originalApi.password
         || originalApi.search || originalApi.hash || !supabasePublishableKey.trim()) {
-      throw new Error('5단계 원본 자료 API 주소와 공개 publishable key를 확인해 주세요.');
+      throw new Error('5단계부터 원본 자료 API 주소와 공개 publishable key를 확인해 주세요.');
     }
     const response = await fetch(originalApi, {
       method: 'GET',
