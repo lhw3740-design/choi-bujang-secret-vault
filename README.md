@@ -26,7 +26,7 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 
 5단계에서는 화면의 메모 자료 요청을 `/api/notes` 및 `/api/notes/:id` 서버 함수로 모읍니다. 함수는 서버 전용 `SUPABASE_SECRET_KEY`로 데이터베이스를 사용하고, 로그인 검증과 소유자 제한을 유지합니다. `aleph.config.json`의 `originalApiUrl`은 쿼리 없는 Supabase REST 자료 경로이며, 빌드가 이를 공개 배포 메타데이터 `/aleph.json`에도 포함합니다. `src/attack-check.mjs`의 제출 자기 점검은 해당 경로에 공개 publishable key로 익명 요청을 보내 실제 응답 상태만 기록합니다. 이 점검은 심판 판정이 아니며, 학습 DB 권한 SQL의 실행이나 실제 A 계정 화면 확인을 대신하지 않습니다.
 
-6단계에서는 [src/decider.mjs](src/decider.mjs)의 `device_registered` 규칙이 판정 요청의 `deviceRegistered`가 `true`일 때만 자료 읽기를 허용합니다. 값이 `false`이거나 누락되면 `device_not_registered`로 거부합니다. 요청의 가명 사용자 식별자는 `subjectId`, 확인된 기기 ID는 `deviceId`이며 판정기는 임의의 사용자·기기 필드를 만들거나 인증서·개인키를 저장하지 않습니다. 실행 확인은 `npm run decider:test`이며, 이는 가상 요청 연습이지 실제 기기 등록이나 심판 판정이 아닙니다.
+7단계에서는 [src/decider.mjs](src/decider.mjs)의 `device_registered` 규칙을 유지하고, 엔진이 검증한 `signals`와 `recentEvents`가 평소와 다른 조합일 때 `step_up_required`로 추가 확인을 요구합니다. 지역 하나만으로 영구 차단하지 않고, 신뢰 가능한 출처가 없거나 이상 신호가 겹치면 재로그인을 요구한 뒤 다시 판정합니다. 요청의 가명 사용자 식별자는 `subjectId`, 확인된 기기 ID는 `deviceId`이며 판정기는 브라우저가 보낸 위치·역할·기기 정보를 직접 신뢰하지 않습니다. 실행 확인은 `npm run decider:test`이며, 이는 가상 요청 연습이지 실제 심판 판정이 아닙니다.
 
 `aleph.config.json`의 `allowedRoutes`에는 `GET`·`POST /api/notes`와 `GET`·`PUT`·`DELETE /api/notes/:id` 경로가 기록되어 있습니다.
 
