@@ -1,7 +1,9 @@
+import { resolve } from 'node:path';
 import { createNotesAuthenticator } from '../src/notes-auth.mjs';
-import { noteHash } from '../src/restore.mjs';
+import { loadSnapshot, noteHash } from '../src/restore.mjs';
 
 const authenticate = createNotesAuthenticator();
+const defaultSnapshotPath = resolve(process.cwd(), 'restore-backup.json');
 
 function validBackupRecord(record, noteId) {
   if (!record || record.note_id !== noteId
@@ -40,6 +42,7 @@ async function readRestoreState(supabase, noteId, ownerId) {
 
 export async function handleRestore(request, response, {
   authenticateRequest = authenticate,
+  snapshotPath = defaultSnapshotPath,
 } = {}) {
   response.setHeader('Cache-Control', 'no-store');
   if (request.method !== 'POST') {
@@ -64,6 +67,17 @@ export async function handleRestore(request, response, {
     return response.status(400).json({ error: 'INVALID_NOTE_ID' });
   }
   const noteId = requestedNoteId.toLowerCase();
+
+  if (mode === 'restore') {
+    try {
+      loadSnapshot(snapshotPath);
+    } catch (error) {
+      console.error('trusted_restore_snapshot_unavailable', {
+        code: typeof error?.code === 'string' ? error.code : 'INVALID_OR_UNVERIFIED_SNAPSHOT',
+      });
+      return response.status(503).json({ error: 'TRUSTED_BACKUP_UNAVAILABLE' });
+    }
+  }
 
   const state = await readRestoreState(auth.supabase, noteId, auth.userId);
   if (state.error) return response.status(state.status).json({ error: state.error });

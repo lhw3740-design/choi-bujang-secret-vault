@@ -166,6 +166,37 @@ test('restore rejects a tampered private backup without changing the note', asyn
   assert.deepEqual(storedNotes.get(noteId), originalNote);
 });
 
+test('restore stops before database access when the pinned snapshot fails verification', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'restore-unverified-'));
+  const snapshotPath = join(directory, 'restore-backup.json');
+  const snapshot = JSON.parse(readFileSync(resolve('restore-backup.json'), 'utf8'));
+  snapshot.version = 'modified-after-verification';
+  writeFileSync(snapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8');
+  const response = responseRecorder();
+  try {
+    await handleRestore({
+      method: 'POST',
+      body: {
+        mode: 'restore',
+        noteId,
+        confirmHash: '0'.repeat(64),
+        expectedCurrentHash: null,
+      },
+    }, response, {
+      snapshotPath,
+      authenticateRequest: async () => ({
+        userId,
+        supabase: { from() { assert.fail('database must not be accessed for an unverified snapshot'); } },
+      }),
+    });
+
+    assert.equal(response.statusCode, 503);
+    assert.deepEqual(response.body, { error: 'TRUSTED_BACKUP_UNAVAILABLE' });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test('restore rereads and rejects a changed verified backup before changing the note', async () => {
   const backup = makeBackup();
   const changedBackup = makeBackup({ title: '사본 재조회 중 변경됨' });
