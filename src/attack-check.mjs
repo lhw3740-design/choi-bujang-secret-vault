@@ -4,7 +4,7 @@ import { supabasePublishableKey } from '../public/supabase-config.js';
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
   if (config.step !== 1 && config.step !== 3 && config.step !== 4
-      && config.step !== 5 && config.step !== 6 && config.step !== 7) {
+      && config.step !== 5 && config.step !== 6 && config.step !== 7 && config.step !== 8) {
     throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   }
   let app;
