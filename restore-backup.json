@@ -1,0 +1,33 @@
+{
+  "version": "pre-attack-verified-v1",
+  "policyVersion": "verified-policy-10",
+  "policy": {
+    "step": 10,
+    "allowedRoutes": [
+      "POST /api/notes",
+      "GET /api/notes/:id",
+      "PUT /api/notes/:id",
+      "DELETE /api/notes/:id",
+      "GET /api/notices",
+      "GET /api/notices/:id",
+      "GET /api/announcements",
+      "GET /api/announcements/:id"
+    ],
+    "restoreRoute": "POST /api/restore"
+  },
+  "notes": [
+    {
+      "id": "restore-note-01",
+      "title": "사전 백업 메모",
+      "content": "이 메모는 침해 전 검증된 사본에서 복원됩니다.",
+      "owner_id": "user-b"
+    }
+  ],
+  "auditLog": [
+    {
+      "kind": "backup_verified",
+      "at": "2026-10-14T00:00:00.000Z",
+      "summary": "사전 백업과 정책을 확인한 뒤 복구 대상만 되살렸습니다."
+    }
+  ]
+}

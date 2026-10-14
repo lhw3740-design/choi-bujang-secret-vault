@@ -1,5 +1,5 @@
 {
-  "step": 9,
+  "step": 10,
   "repoUrl": "https://github.com/lhw3740-design/choi-bujang-secret-vault",
   "publicAppUrl": "https://choi-bujang-secret-vault-mu.vercel.app/",
   "sampleMarker": "SAMPLE_NOTE_1",
@@ -17,8 +17,9 @@
     "GET /api/notices",
     "GET /api/notices/:id",
     "GET /api/announcements",
-    "GET /api/announcements/:id"
+    "GET /api/announcements/:id",
+    "POST /api/restore"
   ],
   "originalApiUrl": "https://tjiczbambcgtikhroibw.supabase.co/rest/v1/learning_notes",
-  "restoreRoute": null
+  "restoreRoute": "POST /api/restore"
 }

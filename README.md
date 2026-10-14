@@ -26,7 +26,7 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 
 5단계에서는 화면의 메모 자료 요청을 `/api/notes` 및 `/api/notes/:id` 서버 함수로 모읍니다. 함수는 서버 전용 `SUPABASE_SECRET_KEY`로 데이터베이스를 사용하고, 로그인 검증과 소유자 제한을 유지합니다. `aleph.config.json`의 `originalApiUrl`은 쿼리 없는 Supabase REST 자료 경로이며, 빌드가 이를 공개 배포 메타데이터 `/aleph.json`에도 포함합니다. `src/attack-check.mjs`의 제출 자기 점검은 해당 경로에 공개 publishable key로 익명 요청을 보내 실제 응답 상태만 기록합니다. 이 점검은 심판 판정이 아니며, 학습 DB 권한 SQL의 실행이나 실제 A 계정 화면 확인을 대신하지 않습니다.
 
-9단계에서는 [src/detect.mjs](src/detect.mjs)의 탐지 규칙이 같은 사용자의 `GET` 조회가 어느 10분 구간에서든 120건을 넘으면 `propose_revocation`을 제안합니다. 120건은 정상으로 유지하고, 다른 사용자·10분 밖 사건은 합치지 않으며 값은 `action`, `reasonCode`, `subject`만 사용합니다. 실제 회수 API는 별도 연결 단계에서 구현하고, 이 단계는 가상 사건 연습만 검증합니다. 실행 확인은 `npm run detect:test`이며, 이는 실제 접속 차단이나 심판 판정이 아닙니다.
+10단계에서는 선택한 안전 정책과 사전 백업의 차이만 보여 주고, 검증된 사본으로 현재 시험 정책을 복원합니다. 이때 그냥 새로고침으로 원래 상태가 돌아오지 않고, 복구 전 변경 범위를 확인한 뒤 `POST /api/restore`로 정책 또는 한 건의 메모를 되살립니다. 메모 복구는 ID·소유자·내용 해시를 비교하고, 다른 메모와 감사 기록은 보존합니다. 실행 확인은 `npm run bundle`과 복구 경로의 정적 검증이며, 실제 운영 정책을 덮어쓰지 않고 사전 검증된 백업만 사용합니다.
 
 `aleph.config.json`의 `allowedRoutes`에는 `GET`·`POST /api/notes`와 `GET`·`PUT`·`DELETE /api/notes/:id` 경로가 기록되어 있습니다.
 
