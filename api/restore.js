@@ -81,6 +81,9 @@ export async function handleRestore(request, response, {
       backupHash: backup.content_hash,
       currentHash,
       currentState: current ? 'present' : 'missing',
+      changedFields: current
+        ? ['title', 'content'].filter((field) => current[field] !== backup[field])
+        : ['title', 'content'],
     });
   }
 
@@ -88,6 +91,20 @@ export async function handleRestore(request, response, {
     return response.status(409).json({ error: 'RESTORE_CONFIRMATION_MISMATCH' });
   }
   if (body.expectedCurrentHash !== currentHash) {
+    return response.status(409).json({ error: 'RESTORE_TARGET_CHANGED' });
+  }
+
+  const verifiedAgain = await readRestoreState(auth.supabase, noteId, auth.userId);
+  if (verifiedAgain.error) {
+    return response.status(verifiedAgain.status).json({ error: verifiedAgain.error });
+  }
+  if (verifiedAgain.backup.content_hash !== backup.content_hash
+      || verifiedAgain.backup.snapshot_version !== backup.snapshot_version
+      || verifiedAgain.backup.verified_at !== backup.verified_at) {
+    return response.status(409).json({ error: 'BACKUP_VERIFICATION_FAILED' });
+  }
+  const latestCurrentHash = verifiedAgain.current ? noteHash(verifiedAgain.current) : null;
+  if (latestCurrentHash !== currentHash) {
     return response.status(409).json({ error: 'RESTORE_TARGET_CHANGED' });
   }
 

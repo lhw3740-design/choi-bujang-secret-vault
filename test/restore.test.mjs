@@ -18,8 +18,9 @@ function responseRecorder() {
   };
 }
 
-function createDatabase({ backup, notes = [] }) {
+function createDatabase({ backup, backupReads, notes = [] }) {
   const storedNotes = new Map(notes.map((note) => [note.id, { ...note }]));
+  let backupReadCount = 0;
   const supabase = {
     from(table) {
       let operation = 'select';
@@ -35,8 +36,13 @@ function createDatabase({ backup, notes = [] }) {
             assert.equal(operation, 'select');
             const idFilter = filters.find(([column]) => column === 'note_id');
             const ownerFilter = filters.find(([column]) => column === 'owner_id');
+            const selectedBackup = backupReads && backupReadCount < backupReads.length
+              ? backupReads[backupReadCount]
+              : backup;
+            backupReadCount += 1;
             return {
-              data: idFilter?.[1] === backup?.note_id && ownerFilter?.[1] === backup?.owner_id ? backup : null,
+              data: idFilter?.[1] === selectedBackup?.note_id
+                && ownerFilter?.[1] === selectedBackup?.owner_id ? selectedBackup : null,
               error: null,
             };
           }
@@ -139,6 +145,7 @@ test('restore preview validates the private backup and does not return note cont
     backupHash: backup.content_hash,
     currentHash: noteHash({ id: noteId, owner_id: userId, title: '변조 제목', content: '변조 본문' }),
     currentState: 'present',
+    changedFields: ['title', 'content'],
   });
   assert.equal(JSON.stringify(response.body).includes(backup.content), false);
 });
@@ -152,6 +159,31 @@ test('restore rejects a tampered private backup without changing the note', asyn
   await handleRestore({
     method: 'POST',
     body: { mode: 'restore', noteId, confirmHash: backup.content_hash },
+  }, response, { authenticateRequest: verifiedAuth(supabase) });
+
+  assert.equal(response.statusCode, 409);
+  assert.deepEqual(response.body, { error: 'BACKUP_VERIFICATION_FAILED' });
+  assert.deepEqual(storedNotes.get(noteId), originalNote);
+});
+
+test('restore rereads and rejects a changed verified backup before changing the note', async () => {
+  const backup = makeBackup();
+  const changedBackup = makeBackup({ title: '사본 재조회 중 변경됨' });
+  const originalNote = { id: noteId, owner_id: userId, title: '현재 제목', content: '현재 본문' };
+  const { supabase, storedNotes } = createDatabase({
+    backup,
+    backupReads: [backup, changedBackup],
+    notes: [originalNote],
+  });
+  const response = responseRecorder();
+  await handleRestore({
+    method: 'POST',
+    body: {
+      mode: 'restore',
+      noteId,
+      confirmHash: backup.content_hash,
+      expectedCurrentHash: noteHash(originalNote),
+    },
   }, response, { authenticateRequest: verifiedAuth(supabase) });
 
   assert.equal(response.statusCode, 409);

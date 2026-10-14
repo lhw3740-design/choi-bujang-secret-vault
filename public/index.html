@@ -286,6 +286,7 @@
               `백업 버전: ${result.snapshotVersion}`,
               `검증 시각: ${result.verifiedAt}`,
               `현재 메모: ${result.currentState}`,
+              `변경 항목: ${result.changedFields.length ? result.changedFields.join(', ') : '없음'}`,
               `백업 해시: ${result.backupHash}`,
               `현재 해시: ${result.currentHash || '메모 없음'}`,
             ].join(' · ');
