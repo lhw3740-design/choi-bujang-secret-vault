@@ -2,22 +2,34 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+const VERIFIED_SNAPSHOT_SHA256 = 'e13198da9aed4e0940405c7d01e6cdce72da4ec21812e6cc37a8cd3c17571786';
+
 export function canonicalize(value) {
   return JSON.stringify(value, Object.keys(value ?? {}).sort());
 }
 
 export function noteHash(note) {
-  const normalized = {
-    id: note?.id,
-    title: note?.title,
-    content: note?.content,
-    owner_id: note?.owner_id,
-  };
-  return createHash('sha256').update(canonicalize(normalized)).digest('hex');
+  const fields = [
+    note?.id ?? note?.note_id,
+    note?.owner_id,
+    note?.title,
+    note?.content,
+  ];
+  if (fields.some((value) => typeof value !== 'string')) {
+    throw new Error('메모 백업의 해시 입력이 올바르지 않습니다.');
+  }
+  const payload = `note-backup-v1|${fields
+    .map((value) => `${Buffer.byteLength(value, 'utf8')}:${value}`)
+    .join('|')}`;
+  return createHash('sha256').update(payload, 'utf8').digest('hex');
 }
 
 export function loadSnapshot(snapshotPath = resolve(process.cwd(), 'restore-backup.json')) {
   const raw = readFileSync(snapshotPath, 'utf8');
+  const digest = createHash('sha256').update(raw).digest('hex');
+  if (digest !== VERIFIED_SNAPSHOT_SHA256) {
+    throw new Error('복원 사본의 무결성 검증에 실패했습니다.');
+  }
   const snapshot = JSON.parse(raw);
   if (!snapshot || typeof snapshot !== 'object') {
     throw new Error('복원 사본이 비어 있습니다.');

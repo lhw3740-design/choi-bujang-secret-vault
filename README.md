@@ -18,7 +18,7 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 
 화면은 Supabase 세션의 access token을 `Authorization: Bearer`로 `/api/notes`에 보냅니다. 서버는 기존 `src/verify-login.mjs`를 사용해 Supabase 발급자, `authenticated` 대상, 만료 시각을 검증하고 실패하면 `401` JSON을 반환합니다. 브라우저가 보낸 user ID나 role은 사용하지 않습니다. `aleph.config.json`의 `identityProvider`에는 공개 가능한 issuer, audience, JWKS URL만 기록하며 비밀 키는 포함하지 않습니다.
 
-현재 `aleph.config.json`은 6단계이며 실제 Vercel 앱 URL, Supabase Auth 발급자 설정, 원본 자료 REST 경로를 기록합니다. 빌드된 `/aleph.json`에는 설정된 단계 번호가 반영됩니다.
+현재 `aleph.config.json`은 10단계이며 실제 Vercel 앱 URL, Supabase Auth 발급자 설정, 원본 자료 REST 경로를 기록합니다. 빌드된 `/aleph.json`에는 설정된 단계 번호가 반영됩니다.
 
 로그인한 사용자는 화면에서 가상 메모를 추가·수정·삭제할 수 있습니다. `POST /api/notes`는 `{id?, title, body}`를 받고, `id`가 없으면 서버가 UUID를 만듭니다. `GET /api/notes`는 검증된 사용자 ID의 메모 배열을 반환하고, `GET`, `PUT`, `DELETE /api/notes/:id`는 한 메모를 처리합니다. 데이터베이스 `content` 열은 API의 `body` 필드로 변환됩니다.
 
@@ -26,7 +26,41 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 
 5단계에서는 화면의 메모 자료 요청을 `/api/notes` 및 `/api/notes/:id` 서버 함수로 모읍니다. 함수는 서버 전용 `SUPABASE_SECRET_KEY`로 데이터베이스를 사용하고, 로그인 검증과 소유자 제한을 유지합니다. `aleph.config.json`의 `originalApiUrl`은 쿼리 없는 Supabase REST 자료 경로이며, 빌드가 이를 공개 배포 메타데이터 `/aleph.json`에도 포함합니다. `src/attack-check.mjs`의 제출 자기 점검은 해당 경로에 공개 publishable key로 익명 요청을 보내 실제 응답 상태만 기록합니다. 이 점검은 심판 판정이 아니며, 학습 DB 권한 SQL의 실행이나 실제 A 계정 화면 확인을 대신하지 않습니다.
 
-10단계에서는 선택한 안전 정책과 사전 백업의 차이만 보여 주고, 검증된 사본으로 현재 시험 정책을 복원합니다. 이때 그냥 새로고침으로 원래 상태가 돌아오지 않고, 복구 전 변경 범위를 확인한 뒤 `POST /api/restore`로 정책 또는 한 건의 메모를 되살립니다. 메모 복구는 ID·소유자·내용 해시를 비교하고, 다른 메모와 감사 기록은 보존합니다. 실행 확인은 `npm run bundle`과 복구 경로의 정적 검증이며, 실제 운영 정책을 덮어쓰지 않고 사전 검증된 백업만 사용합니다.
+10단계의 메모 복구는 `POST /api/restore`가 서버 인증으로 확인한 사용자 ID와 비공개 `learning_note_backups`의 ID·소유자·내용 해시를 대조한 뒤, 해당 사용자의 메모 한 건만 `learning_notes`에 복원합니다. 화면에서 메모 ID를 입력해 **백업과 변경 상태 미리보기**를 먼저 확인하고, **확인한 백업으로 이 메모 복구**를 눌러야 합니다. 백업 테이블은 [전용 마이그레이션](supabase/migrations/20261014083000_create_learning_note_backups.sql)을 적용하고, 침해 전에 신뢰한 메모 사본만 관리자 SQL Editor에서 넣어야 합니다. 마이그레이션 적용만으로 과거 내용이 백업되지는 않습니다. 현재 잘못된/변조된 자료에서 새 백업을 만들면 복구용 사본이 되지 않으므로, 반드시 침해 전 신뢰된 사본을 사용하세요.
+
+사전 백업을 준비하는 운영자는 Supabase Dashboard → SQL Editor에서 먼저 마이그레이션 SQL을 실행합니다. 침해 전 신뢰된 원본이 `learning_notes`에 아직 있는 경우에만 다음 쿼리의 두 UUID를 해당 메모 ID와 소유자 ID로 바꿔 실행합니다. 쿼리는 내용을 비공개 백업 테이블로 복사하고 화면에 메모 본문을 출력하지 않습니다. 이미 메모가 변조·삭제된 뒤라면 현재 행을 백업하지 말고, 별도의 검증된 사본으로 백업 행을 채워야 합니다.
+
+```sql
+insert into public.learning_note_backups (
+  note_id, owner_id, title, content, content_hash, snapshot_version, verified_at
+)
+select
+  id, owner_id, title, content,
+  public.learning_note_backup_hash(id, owner_id, title, content),
+  'pre-attack-verified-v1',
+  now()
+from public.learning_notes
+where id = '00000000-0000-4000-8000-000000000000'::uuid
+  and owner_id = '00000000-0000-4000-8000-000000000000'::uuid
+on conflict (note_id) do nothing;
+```
+
+화면에서 확인할 순서:
+
+1. Supabase Dashboard → Table Editor → `public.learning_notes`에서 시험 계정 B의 메모 ID를 확인합니다. 본문을 복사하거나 채팅·로그에 남기지 않습니다.
+2. Vercel 배포 주소를 열고 시험 계정 B로 로그인합니다.
+3. **검증된 백업에서 메모 복구**에 메모 ID를 입력한 뒤 **백업과 변경 상태 미리보기**를 누릅니다. `VERIFIED_BACKUP_NOT_FOUND` 또는 `BACKUP_VERIFICATION_FAILED`가 나오면 중단합니다.
+4. 표시된 버전·검증 시각·백업 해시·현재 상태가 기대한 대상인지 확인하고, **확인한 백업으로 이 메모 복구**를 눌러 확인 대화상자에 동의합니다.
+5. 정상 확인은 B의 자료실에서 해당 메모가 원래대로 보이고, ID·소유자·복원 해시가 확인되는 것입니다. 금지 확인은 다른 소유자의 메모 ID로 미리보기를 요청했을 때 `VERIFIED_BACKUP_NOT_FOUND`가 나고 복구되지 않는 것입니다. 실제 수행한 결과만 아래에 기록합니다.
+
+실제 배포 재시험 기록(현재 미실행):
+
+- 백업 미리보기: 미실행
+- 시험 계정 B 단일 메모 복구 및 ID·소유자·해시 확인: 미실행
+- B 정상 자료 요청: 미실행
+- 다른 사용자 메모 요청 거부: 미실행
+
+정책 복원은 배포 서버 파일에 쓰지 않도록 API에서 제공하지 않으며(`POLICY_RESTORE_UNAVAILABLE`), 정책 비교/복구 모듈은 로컬 연습용입니다. 자동화 테스트는 `node --test test/restore.test.mjs`이며 실제 계정·DB·배포 시험을 대신하지 않습니다.
 
 `aleph.config.json`의 `allowedRoutes`에는 `GET`·`POST /api/notes`와 `GET`·`PUT`·`DELETE /api/notes/:id` 경로가 기록되어 있습니다.
 

@@ -64,6 +64,13 @@
       <label>내용<textarea name="body" maxlength="10000" required></textarea></label>
       <button type="submit">메모 추가</button>
     </form>
+    <form id="restore-note-form" class="note-form" hidden>
+      <h2>검증된 백업에서 메모 복구</h2>
+      <label>복구 대상 메모 ID<input name="noteId" type="text" inputmode="text" pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}" required></label>
+      <button id="restore-preview-button" type="submit">백업과 변경 상태 미리보기</button>
+      <p id="restore-preview" role="status" aria-live="polite"></p>
+      <button id="restore-confirm-button" type="button" hidden>확인한 백업으로 이 메모 복구</button>
+    </form>
     <ul id="notes" aria-live="polite"><li>로그인해야 가상 메모를 볼 수 있습니다.</li></ul>
   </main>
   <script type="module">
@@ -78,9 +85,14 @@
     const authMessage = document.querySelector('#auth-message');
     const passwordInput = document.querySelector('#password');
     const addNoteForm = document.querySelector('#add-note-form');
+    const restoreNoteForm = document.querySelector('#restore-note-form');
+    const restorePreview = document.querySelector('#restore-preview');
+    const restorePreviewButton = document.querySelector('#restore-preview-button');
+    const restoreConfirmButton = document.querySelector('#restore-confirm-button');
     const configured = Boolean(supabaseUrl.trim() && supabasePublishableKey.trim());
     let noteRequestId = 0;
     let currentSession = null;
+    let pendingRestore = null;
 
     async function requestNoteApi(session, path, method = 'GET', payload) {
       if (!session?.access_token) throw new Error('로그인이 필요합니다.');
@@ -215,6 +227,12 @@
       loginForm.hidden = signedIn;
       logoutButton.hidden = !signedIn;
       addNoteForm.hidden = !signedIn;
+      restoreNoteForm.hidden = !signedIn;
+      if (!signedIn) {
+        pendingRestore = null;
+        restoreConfirmButton.hidden = true;
+        restorePreview.textContent = '';
+      }
       authState.textContent = signedIn
         ? `로그인됨: ${session.user.email || '이메일 계정'}`
         : '로그아웃 상태입니다.';
@@ -249,6 +267,65 @@
             authMessage.textContent = error.message;
           } finally {
             submitButton.disabled = false;
+          }
+        });
+
+        restoreNoteForm.addEventListener('submit', async event => {
+          event.preventDefault();
+          restorePreviewButton.disabled = true;
+          restoreConfirmButton.hidden = true;
+          pendingRestore = null;
+          restorePreview.textContent = '검증된 백업을 확인하는 중입니다.';
+          try {
+            const result = await requestNoteApi(currentSession, '/api/restore', 'POST', {
+              mode: 'preview',
+              noteId: restoreNoteForm.elements.noteId.value.trim(),
+            });
+            pendingRestore = result;
+            restorePreview.textContent = [
+              `백업 버전: ${result.snapshotVersion}`,
+              `검증 시각: ${result.verifiedAt}`,
+              `현재 메모: ${result.currentState}`,
+              `백업 해시: ${result.backupHash}`,
+              `현재 해시: ${result.currentHash || '메모 없음'}`,
+            ].join(' · ');
+            restoreConfirmButton.hidden = false;
+          } catch (error) {
+            restorePreview.textContent = error.message;
+          } finally {
+            restorePreviewButton.disabled = false;
+          }
+        });
+
+        restoreNoteForm.elements.noteId.addEventListener('input', () => {
+          pendingRestore = null;
+          restoreConfirmButton.hidden = true;
+          restorePreview.textContent = '';
+        });
+
+        restoreConfirmButton.addEventListener('click', async () => {
+          if (!pendingRestore || !currentSession?.access_token) return;
+          restoreConfirmButton.disabled = true;
+          try {
+            const confirmed = window.confirm(
+              `백업 버전 ${pendingRestore.snapshotVersion}의 메모 ${pendingRestore.noteId}를 복구할까요?`,
+            );
+            if (!confirmed) return;
+            await requestNoteApi(currentSession, '/api/restore', 'POST', {
+              mode: 'restore',
+              noteId: pendingRestore.noteId,
+              confirmHash: pendingRestore.backupHash,
+              expectedCurrentHash: pendingRestore.currentHash,
+            });
+            pendingRestore = null;
+            restoreConfirmButton.hidden = true;
+            restorePreview.textContent = '복구가 완료됐습니다. 메모 목록을 다시 불러왔습니다.';
+            authMessage.textContent = '검증된 백업에서 메모를 복구했습니다.';
+            await loadNotes(currentSession);
+          } catch (error) {
+            restorePreview.textContent = error.message;
+          } finally {
+            restoreConfirmButton.disabled = false;
           }
         });
 
