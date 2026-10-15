@@ -61,7 +61,7 @@ on conflict (note_id) do nothing;
 - 다른 사용자 메모 요청 거부: 성공 — 복구 거부
 - 1~9단계 정상·금지 요청 재시험: 성공 — 사용자 확인에 따라 모두 기대한 결과
 
-정책 복원은 배포 서버 파일에 쓰지 않도록 API에서 제공하지 않으며(`POLICY_RESTORE_UNAVAILABLE`), 정책 비교/복구 모듈은 로컬 연습용입니다. 자동화 테스트는 `node --test test/restore.test.mjs`이며 실제 계정·DB·배포 시험을 대신하지 않습니다.
+정책 복원(`mode: "policy"`)은 고정 지문으로 `restore-backup.json`을 다시 읽어 검증한 뒤 사본 버전과 바뀔 정책 항목만 보여 주며(`applied:false`), 검증에 실패하면 `TRUSTED_BACKUP_UNAVAILABLE`로 중단합니다. 배포 서버 파일·감사 이력은 쓰지 않습니다. 자동화 테스트는 `node --test test/restore.test.mjs`이며 실제 계정·DB·배포 시험을 대신하지 않습니다.
 
 `aleph.config.json`의 `allowedRoutes`에는 `GET`·`POST /api/notes`와 `GET`·`PUT`·`DELETE /api/notes/:id` 경로가 기록되어 있습니다.
 
