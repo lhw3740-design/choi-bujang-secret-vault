@@ -58,6 +58,7 @@ export async function runAttackChecks(config) {
     return [originalResult, await checkAnonymousNotesApi(app)];
   }
   if (config.step === 3 || config.step === 4) return [await checkAnonymousNotesApi(app)];
+  if (config.step === 11) return [await checkAnonymousNotesApi(app), await checkAnonymousDeviceApi(app)];
   if (typeof config.sampleMarker !== 'string' || !config.sampleMarker) throw new Error('가상 메모의 확인 표시를 넣어 주세요.');
   const response = await fetch(new URL('/data.json', app), {
     redirect: 'error', signal: AbortSignal.timeout(10000),
