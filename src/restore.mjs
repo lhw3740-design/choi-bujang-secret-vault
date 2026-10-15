@@ -24,7 +24,7 @@ export function noteHash(note) {
   return createHash('sha256').update(payload, 'utf8').digest('hex');
 }
 
-export function loadSnapshot(snapshotPath = resolve(process.cwd(), 'restore-backup.json')) {
+export function loadVerifiedSnapshot(snapshotPath = resolve(process.cwd(), 'restore-backup.json')) {
   const raw = readFileSync(snapshotPath, 'utf8');
   const digest = createHash('sha256').update(raw).digest('hex');
   if (digest !== VERIFIED_SNAPSHOT_SHA256) {
@@ -40,16 +40,16 @@ export function loadSnapshot(snapshotPath = resolve(process.cwd(), 'restore-back
   if (!snapshot.policy || typeof snapshot.policy !== 'object') {
     throw new Error('복원 사본에 정책 정보가 필요합니다.');
   }
-  return snapshot;
+  return { snapshot, digest };
+}
+
+export function loadSnapshot(snapshotPath = resolve(process.cwd(), 'restore-backup.json')) {
+  return loadVerifiedSnapshot(snapshotPath).snapshot;
 }
 
 export function diffPolicy(currentPolicy, backupPolicy) {
-  const keys = new Set([
-    ...Object.keys(currentPolicy ?? {}),
-    ...Object.keys(backupPolicy ?? {}),
-  ]);
   const changes = [];
-  for (const key of [...keys].sort()) {
+  for (const key of Object.keys(backupPolicy ?? {}).sort()) {
     const currentValue = currentPolicy?.[key];
     const backupValue = backupPolicy?.[key];
     if (JSON.stringify(currentValue) !== JSON.stringify(backupValue)) {

@@ -71,6 +71,12 @@
       <p id="restore-preview" role="status" aria-live="polite"></p>
       <button id="restore-confirm-button" type="button" hidden>확인한 백업으로 이 메모 복구</button>
     </form>
+    <section id="restore-policy-section" class="note-form" hidden>
+      <h2>시험 정책 복구</h2>
+      <button id="policy-preview-button" type="button">검증된 정책 사본과 차이 미리보기</button>
+      <p id="policy-preview" role="status" aria-live="polite"></p>
+      <button id="policy-restore-button" type="button" hidden>미리 본 시험 정책 복구</button>
+    </section>
     <ul id="notes" aria-live="polite"><li>로그인해야 가상 메모를 볼 수 있습니다.</li></ul>
   </main>
   <script type="module">
@@ -89,10 +95,15 @@
     const restorePreview = document.querySelector('#restore-preview');
     const restorePreviewButton = document.querySelector('#restore-preview-button');
     const restoreConfirmButton = document.querySelector('#restore-confirm-button');
+    const restorePolicySection = document.querySelector('#restore-policy-section');
+    const policyPreviewButton = document.querySelector('#policy-preview-button');
+    const policyPreview = document.querySelector('#policy-preview');
+    const policyRestoreButton = document.querySelector('#policy-restore-button');
     const configured = Boolean(supabaseUrl.trim() && supabasePublishableKey.trim());
     let noteRequestId = 0;
     let currentSession = null;
     let pendingRestore = null;
+    let pendingPolicyRestore = null;
 
     async function requestNoteApi(session, path, method = 'GET', payload) {
       if (!session?.access_token) throw new Error('로그인이 필요합니다.');
@@ -228,10 +239,14 @@
       logoutButton.hidden = !signedIn;
       addNoteForm.hidden = !signedIn;
       restoreNoteForm.hidden = !signedIn;
+      restorePolicySection.hidden = !signedIn;
       if (!signedIn) {
         pendingRestore = null;
         restoreConfirmButton.hidden = true;
         restorePreview.textContent = '';
+        pendingPolicyRestore = null;
+        policyRestoreButton.hidden = true;
+        policyPreview.textContent = '';
       }
       authState.textContent = signedIn
         ? `로그인됨: ${session.user.email || '이메일 계정'}`
@@ -295,6 +310,53 @@
             restorePreview.textContent = error.message;
           } finally {
             restorePreviewButton.disabled = false;
+          }
+        });
+
+        policyPreviewButton.addEventListener('click', async () => {
+          policyPreviewButton.disabled = true;
+          policyRestoreButton.hidden = true;
+          pendingPolicyRestore = null;
+          policyPreview.textContent = '검증된 정책 사본을 읽고 시험 정책 차이를 확인하는 중입니다.';
+          try {
+            const result = await requestNoteApi(currentSession, '/api/restore', 'POST', {
+              mode: 'policy',
+              action: 'preview',
+            });
+            pendingPolicyRestore = result;
+            const changes = result.changes.length
+              ? result.changes.map(change => `${change.key}: ${JSON.stringify(change.from)} → ${JSON.stringify(change.to)}`).join(' · ')
+              : '변경 항목 없음';
+            policyPreview.textContent = `사본 ${result.backupVersion} · revision ${result.currentRevision} · ${changes}`;
+            policyRestoreButton.hidden = result.changedKeys.length === 0;
+          } catch (error) {
+            policyPreview.textContent = error.message;
+          } finally {
+            policyPreviewButton.disabled = false;
+          }
+        });
+
+        policyRestoreButton.addEventListener('click', async () => {
+          if (!pendingPolicyRestore || !currentSession?.access_token) return;
+          policyRestoreButton.disabled = true;
+          try {
+            const confirmed = window.confirm(
+              `검증된 사본 ${pendingPolicyRestore.backupVersion}의 시험 정책을 복구할까요? 변경 항목: ${pendingPolicyRestore.changedKeys.join(', ')}`,
+            );
+            if (!confirmed) return;
+            const result = await requestNoteApi(currentSession, '/api/restore', 'POST', {
+              mode: 'policy',
+              action: 'restore',
+              confirmHash: pendingPolicyRestore.backupHash,
+              expectedRevision: pendingPolicyRestore.currentRevision,
+            });
+            pendingPolicyRestore = null;
+            policyRestoreButton.hidden = true;
+            policyPreview.textContent = `시험 정책 복구 완료 · revision ${result.currentRevision} · 감사 기록 보존`;
+          } catch (error) {
+            policyPreview.textContent = error.message;
+          } finally {
+            policyRestoreButton.disabled = false;
           }
         });
 

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { handleRestore } from '../api/restore.js';
-import { loadSnapshot, noteHash } from '../src/restore.mjs';
+import { loadSnapshot, loadVerifiedSnapshot, noteHash } from '../src/restore.mjs';
 
 const userId = '11111111-1111-4111-8111-111111111111';
 const noteId = '22222222-2222-4222-8222-222222222222';
@@ -78,6 +78,59 @@ function createDatabase({ backup, backupReads, notes = [] }) {
 
 function verifiedAuth(supabase) {
   return async () => ({ supabase, userId });
+}
+
+function createPolicyDatabase(policy, revision = 4) {
+  let currentPolicy = structuredClone(policy);
+  let currentRevision = revision;
+  const audit = [];
+  return {
+    audit,
+    get policy() { return currentPolicy; },
+    get revision() { return currentRevision; },
+    supabase: {
+      from(table) {
+        assert.equal(table, 'learning_test_policy_state');
+        const query = {
+          select() { return query; },
+          eq(column, value) {
+            assert.equal(column, 'id');
+            assert.equal(value, 'active');
+            return query;
+          },
+          async maybeSingle() {
+            return {
+              data: { id: 'active', policy: structuredClone(currentPolicy), revision: currentRevision },
+              error: null,
+            };
+          },
+        };
+        return query;
+      },
+      async rpc(name, args) {
+        assert.equal(name, 'restore_learning_test_policy');
+        if (currentRevision !== args.p_expected_revision
+            || JSON.stringify(currentPolicy) !== JSON.stringify(args.p_expected_policy)) {
+          return { data: null, error: { code: '40001' } };
+        }
+        const before = structuredClone(currentPolicy);
+        currentPolicy = { ...currentPolicy, ...args.p_restored_policy };
+        currentRevision += 1;
+        audit.push({
+          actorId: args.p_actor_id,
+          backupVersion: args.p_backup_version,
+          backupHash: args.p_backup_sha256,
+          changedKeys: args.p_changed_keys,
+          before,
+          after: structuredClone(currentPolicy),
+        });
+        return {
+          data: [{ revision: currentRevision, policy: currentPolicy, audit_id: audit.length }],
+          error: null,
+        };
+      },
+    },
+  };
 }
 
 function makeBackup(overrides = {}) {
@@ -164,6 +217,91 @@ test('restore rejects a tampered private backup without changing the note', asyn
   assert.equal(response.statusCode, 409);
   assert.deepEqual(response.body, { error: 'BACKUP_VERIFICATION_FAILED' });
   assert.deepEqual(storedNotes.get(noteId), originalNote);
+});
+
+test('policy preview shows the verified backup version and targeted differences without mutation', async () => {
+  const trusted = loadVerifiedSnapshot();
+  const currentPolicy = {
+    ...structuredClone(trusted.snapshot.policy),
+    allowedRoutes: ['GET /api/notes', 'POST /api/notes'],
+    teacherRules: ['preserve-this-service'],
+  };
+  const database = createPolicyDatabase(currentPolicy);
+  const response = responseRecorder();
+  await handleRestore({
+    method: 'POST',
+    body: { mode: 'policy', action: 'preview' },
+  }, response, { authenticateRequest: verifiedAuth(database.supabase) });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.backupVersion, trusted.snapshot.policyVersion);
+  assert.equal(response.body.backupHash, trusted.digest);
+  assert.deepEqual(response.body.changedKeys, ['allowedRoutes']);
+  assert.deepEqual(response.body.changes, [{
+    key: 'allowedRoutes',
+    from: currentPolicy.allowedRoutes,
+    to: trusted.snapshot.policy.allowedRoutes,
+  }]);
+  assert.deepEqual(database.policy, currentPolicy);
+  assert.equal(database.audit.length, 0);
+});
+
+test('policy restore requires the preview confirmation and preserves unrelated rules and audit history', async () => {
+  const trusted = loadVerifiedSnapshot();
+  const currentPolicy = {
+    ...structuredClone(trusted.snapshot.policy),
+    allowedRoutes: ['GET /api/notes', 'POST /api/notes'],
+    teacherRules: ['preserve-this-service'],
+  };
+  const database = createPolicyDatabase(currentPolicy);
+  const response = responseRecorder();
+  await handleRestore({
+    method: 'POST',
+    body: {
+      mode: 'policy',
+      action: 'restore',
+      confirmHash: trusted.digest,
+      expectedRevision: database.revision,
+    },
+  }, response, { authenticateRequest: verifiedAuth(database.supabase) });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.restored, true);
+  assert.equal(database.revision, 5);
+  assert.deepEqual(database.policy.allowedRoutes, trusted.snapshot.policy.allowedRoutes);
+  assert.deepEqual(database.policy.teacherRules, ['preserve-this-service']);
+  assert.equal(database.audit.length, 1);
+  assert.deepEqual(database.audit[0].changedKeys, ['allowedRoutes']);
+  assert.deepEqual(database.audit[0].before, currentPolicy);
+  assert.deepEqual(database.audit[0].after, database.policy);
+});
+
+test('policy restore stops before database access if the verified snapshot is altered', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'policy-restore-unverified-'));
+  const snapshotPath = join(directory, 'restore-backup.json');
+  const snapshot = JSON.parse(readFileSync(resolve('restore-backup.json'), 'utf8'));
+  snapshot.policyVersion = 'tampered';
+  writeFileSync(snapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8');
+  const response = responseRecorder();
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    await handleRestore({
+      method: 'POST',
+      body: { mode: 'policy', action: 'restore' },
+    }, response, {
+      snapshotPath,
+      authenticateRequest: async () => ({
+        userId,
+        supabase: { from() { assert.fail('policy store must not be read before backup verification'); } },
+      }),
+    });
+    assert.equal(response.statusCode, 503);
+    assert.deepEqual(response.body, { error: 'TRUSTED_BACKUP_UNAVAILABLE' });
+  } finally {
+    console.error = originalError;
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test('restore stops before database access when the pinned snapshot fails verification', async () => {
