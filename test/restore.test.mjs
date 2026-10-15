@@ -335,6 +335,48 @@ test('restore stops before database access when the pinned snapshot fails verifi
   }
 });
 
+test('note restore rereads the pinned snapshot immediately before writing', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'restore-snapshot-reread-'));
+  const snapshotPath = join(directory, 'restore-backup.json');
+  const originalRaw = readFileSync(resolve('restore-backup.json'), 'utf8');
+  writeFileSync(snapshotPath, originalRaw, 'utf8');
+  const backup = makeBackup();
+  const originalNote = { id: noteId, owner_id: userId, title: '현재 제목', content: '현재 본문' };
+  const { supabase, storedNotes } = createDatabase({ backup, notes: [originalNote] });
+  let backupReads = 0;
+  const changingSupabase = {
+    from(table) {
+      if (table === 'learning_note_backups' && ++backupReads === 2) {
+        const changedSnapshot = JSON.parse(originalRaw);
+        changedSnapshot.policyVersion = 'tampered-after-first-check';
+        writeFileSync(snapshotPath, `${JSON.stringify(changedSnapshot, null, 2)}\n`, 'utf8');
+      }
+      return supabase.from(table);
+    },
+  };
+  const response = responseRecorder();
+  try {
+    await handleRestore({
+      method: 'POST',
+      body: {
+        mode: 'restore',
+        noteId,
+        confirmHash: backup.content_hash,
+        expectedCurrentHash: noteHash(originalNote),
+      },
+    }, response, {
+      snapshotPath,
+      authenticateRequest: verifiedAuth(changingSupabase),
+    });
+
+    assert.equal(response.statusCode, 503);
+    assert.deepEqual(response.body, { error: 'TRUSTED_BACKUP_UNAVAILABLE' });
+    assert.deepEqual(storedNotes.get(noteId), originalNote);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test('restore rereads and rejects a changed verified backup before changing the note', async () => {
   const backup = makeBackup();
   const changedBackup = makeBackup({ title: '사본 재조회 중 변경됨' });

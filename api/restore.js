@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { createNotesAuthenticator } from '../src/notes-auth.mjs';
-import { diffPolicy, loadSnapshot, loadVerifiedSnapshot, noteHash } from '../src/restore.mjs';
+import { diffPolicy, loadVerifiedSnapshot, noteHash } from '../src/restore.mjs';
 
 const authenticate = createNotesAuthenticator();
 const defaultSnapshotPath = resolve(process.cwd(), 'restore-backup.json');
@@ -182,9 +182,10 @@ export async function handleRestore(request, response, {
   }
   const noteId = requestedNoteId.toLowerCase();
 
+  let verifiedSnapshot;
   if (mode === 'restore') {
     try {
-      loadSnapshot(snapshotPath);
+      verifiedSnapshot = loadVerifiedSnapshot(snapshotPath);
     } catch (error) {
       console.error('trusted_restore_snapshot_unavailable', {
         code: typeof error?.code === 'string' ? error.code : 'INVALID_OR_UNVERIFIED_SNAPSHOT',
@@ -234,6 +235,18 @@ export async function handleRestore(request, response, {
   const latestCurrentHash = verifiedAgain.current ? noteHash(verifiedAgain.current) : null;
   if (latestCurrentHash !== currentHash) {
     return response.status(409).json({ error: 'RESTORE_TARGET_CHANGED' });
+  }
+
+  let verifiedSnapshotAgain;
+  try {
+    verifiedSnapshotAgain = loadVerifiedSnapshot(snapshotPath);
+  } catch (error) {
+    reportUnverifiedSnapshot(error);
+    return response.status(503).json({ error: 'TRUSTED_BACKUP_UNAVAILABLE' });
+  }
+  if (verifiedSnapshotAgain.digest !== verifiedSnapshot.digest
+      || verifiedSnapshotAgain.snapshot.version !== verifiedSnapshot.snapshot.version) {
+    return response.status(409).json({ error: 'BACKUP_VERIFICATION_FAILED' });
   }
 
   const restoredValues = {
