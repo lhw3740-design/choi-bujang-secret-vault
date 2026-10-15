@@ -330,3 +330,42 @@ test('restore rejects a target changed after the preview', async () => {
   assert.deepEqual(response.body, { error: 'RESTORE_TARGET_CHANGED' });
   assert.deepEqual(storedNotes.get(noteId), current);
 });
+
+test('restore rereads the pinned snapshot right before writing and stops if it changed', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'restore-reread-'));
+  const snapshotPath = join(directory, 'restore-backup.json');
+  const original = readFileSync(resolve('restore-backup.json'), 'utf8');
+  writeFileSync(snapshotPath, original, 'utf8');
+  const backup = makeBackup();
+  const originalNote = { id: noteId, owner_id: userId, title: '현재 제목', content: '현재 본문' };
+  const { supabase, storedNotes } = createDatabase({ backup, notes: [originalNote] });
+  let backupReads = 0;
+  const tamperingSupabase = {
+    from(table) {
+      if (table === 'learning_note_backups' && ++backupReads === 2) {
+        const snapshot = JSON.parse(original);
+        snapshot.notes[0].content = 'tampered after first check';
+        writeFileSync(snapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8');
+      }
+      return supabase.from(table);
+    },
+  };
+  const response = responseRecorder();
+  try {
+    await handleRestore({
+      method: 'POST',
+      body: {
+        mode: 'restore',
+        noteId,
+        confirmHash: backup.content_hash,
+        expectedCurrentHash: noteHash(originalNote),
+      },
+    }, response, { snapshotPath, authenticateRequest: verifiedAuth(tamperingSupabase) });
+
+    assert.equal(response.statusCode, 503);
+    assert.deepEqual(response.body, { error: 'TRUSTED_BACKUP_UNAVAILABLE' });
+    assert.deepEqual(storedNotes.get(noteId), originalNote);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

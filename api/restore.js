@@ -122,6 +122,16 @@ export async function handleRestore(request, response, {
     return response.status(409).json({ error: 'RESTORE_TARGET_CHANGED' });
   }
 
+  // 쓰기 직전에 고정 지문 사본을 한 번 더 읽어 검증한다. 실패하면 DB를 바꾸지 않고 멈춘다.
+  try {
+    loadSnapshot(snapshotPath);
+  } catch (error) {
+    console.error('trusted_restore_snapshot_unavailable', {
+      code: typeof error?.code === 'string' ? error.code : 'INVALID_OR_UNVERIFIED_SNAPSHOT',
+    });
+    return response.status(503).json({ error: 'TRUSTED_BACKUP_UNAVAILABLE' });
+  }
+
   const restoredValues = {
     title: backup.title,
     content: backup.content,
