@@ -154,6 +154,7 @@ test('screen keeps device state out of browser storage and gates protected data 
   const html = readFileSync('public/index.html', 'utf8');
   assert.doesNotMatch(html, /localStorage|sessionStorage|indexedDB/u);
   assert.match(html, /persistSession: false/u);
+  assert.match(html, /noteRequestId \+= 1;\s*showNotesMessage/u);
   assert.match(html, /rel="manifest"/u);
   assert.match(html, /deviceState !== 'approved'/u);
   assert.match(html, /설치했다는 표시만으로는 기기를 믿지 않습니다/u);

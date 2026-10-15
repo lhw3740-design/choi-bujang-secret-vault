@@ -282,6 +282,11 @@
       addNoteForm.hidden = !approved;
       restoreNoteForm.hidden = !approved;
       if (!approved) {
+        // 승인을 잃거나 아직 확인되지 않으면 목록을 즉시 비우고 진행 중인 자료 요청 결과를 무효화한다.
+        noteRequestId += 1;
+        showNotesMessage(currentSession?.user
+          ? '기기 승인 전에는 보호 자료를 표시하지 않습니다.'
+          : '로그인해야 가상 메모를 볼 수 있습니다.');
         pendingRestore = null;
         restoreConfirmButton.hidden = true;
         restorePreview.textContent = '';

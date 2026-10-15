@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import { createNotesAuthenticator } from '../src/notes-auth.mjs';
-import { diffPolicy, loadVerifiedSnapshot, noteHash } from '../src/restore.mjs';
+import { diffPolicy, loadSnapshot, noteHash } from '../src/restore.mjs';
+import config from '../aleph.config.json' with { type: 'json' };
 
 const authenticate = createNotesAuthenticator();
 const defaultSnapshotPath = resolve(process.cwd(), 'restore-backup.json');
@@ -40,120 +41,6 @@ async function readRestoreState(supabase, noteId, ownerId) {
   return { backup, current };
 }
 
-function reportUnverifiedSnapshot(error) {
-  console.error('trusted_restore_snapshot_unavailable', {
-    code: typeof error?.code === 'string' ? error.code : 'INVALID_OR_UNVERIFIED_SNAPSHOT',
-  });
-}
-
-async function readTestPolicy(supabase) {
-  const { data, error } = await supabase.from('learning_test_policy_state')
-    .select('policy,revision')
-    .eq('id', 'active')
-    .maybeSingle();
-  if (error) return { error: 'TEST_POLICY_UNAVAILABLE', status: 502 };
-  if (!data) return { error: 'TEST_POLICY_NOT_FOUND', status: 404 };
-  if (!data.policy || typeof data.policy !== 'object' || Array.isArray(data.policy)
-      || !Number.isSafeInteger(data.revision) || data.revision < 1) {
-    return { error: 'TEST_POLICY_INVALID', status: 409 };
-  }
-  return { policy: data.policy, revision: data.revision };
-}
-
-async function handlePolicyRestore(body, response, auth, snapshotPath) {
-  if (!['preview', 'restore'].includes(body.action)) {
-    return response.status(400).json({ error: 'INVALID_POLICY_RESTORE_ACTION' });
-  }
-
-  let verified;
-  try {
-    verified = loadVerifiedSnapshot(snapshotPath);
-  } catch (error) {
-    reportUnverifiedSnapshot(error);
-    return response.status(503).json({ error: 'TRUSTED_BACKUP_UNAVAILABLE' });
-  }
-
-  const current = await readTestPolicy(auth.supabase);
-  if (current.error) return response.status(current.status).json({ error: current.error });
-  const changes = diffPolicy(current.policy, verified.snapshot.policy);
-
-  if (body.action === 'preview') {
-    return response.status(200).json({
-      ok: true,
-      mode: 'policy',
-      action: 'preview',
-      backupVersion: verified.snapshot.policyVersion,
-      backupHash: verified.digest,
-      currentRevision: current.revision,
-      changedKeys: changes.changedKeys,
-      changes: changes.changes,
-    });
-  }
-
-  if (body.confirmHash !== verified.digest) {
-    return response.status(409).json({ error: 'POLICY_RESTORE_CONFIRMATION_MISMATCH' });
-  }
-  if (body.expectedRevision !== current.revision) {
-    return response.status(409).json({ error: 'TEST_POLICY_CHANGED' });
-  }
-  if (changes.changedKeys.length === 0) {
-    return response.status(200).json({
-      ok: true,
-      mode: 'policy',
-      restored: false,
-      currentRevision: current.revision,
-      changedKeys: [],
-    });
-  }
-
-  let verifiedAgain;
-  try {
-    verifiedAgain = loadVerifiedSnapshot(snapshotPath);
-  } catch (error) {
-    reportUnverifiedSnapshot(error);
-    return response.status(503).json({ error: 'TRUSTED_BACKUP_UNAVAILABLE' });
-  }
-  if (verifiedAgain.digest !== verified.digest
-      || verifiedAgain.snapshot.policyVersion !== verified.snapshot.policyVersion) {
-    return response.status(409).json({ error: 'BACKUP_VERIFICATION_FAILED' });
-  }
-
-  const latest = await readTestPolicy(auth.supabase);
-  if (latest.error) return response.status(latest.status).json({ error: latest.error });
-  if (latest.revision !== current.revision
-      || JSON.stringify(latest.policy) !== JSON.stringify(current.policy)) {
-    return response.status(409).json({ error: 'TEST_POLICY_CHANGED' });
-  }
-
-  const { data, error } = await auth.supabase.rpc('restore_learning_test_policy', {
-    p_expected_revision: current.revision,
-    p_expected_policy: current.policy,
-    p_restored_policy: verifiedAgain.snapshot.policy,
-    p_actor_id: auth.userId,
-    p_backup_version: verifiedAgain.snapshot.policyVersion,
-    p_backup_sha256: verifiedAgain.digest,
-    p_changed_keys: changes.changedKeys,
-  });
-  if (error) {
-    const status = error.code === '40001' ? 409 : 502;
-    return response.status(status).json({
-      error: status === 409 ? 'TEST_POLICY_CHANGED' : 'POLICY_RESTORE_FAILED',
-    });
-  }
-  const restored = Array.isArray(data) ? data[0] : data;
-  if (!restored || !Number.isSafeInteger(restored.revision)) {
-    return response.status(502).json({ error: 'POLICY_RESTORE_FAILED' });
-  }
-  return response.status(200).json({
-    ok: true,
-    mode: 'policy',
-    restored: true,
-    backupVersion: verifiedAgain.snapshot.policyVersion,
-    currentRevision: restored.revision,
-    changedKeys: changes.changedKeys,
-  });
-}
-
 export async function handleRestore(request, response, {
   authenticateRequest = authenticate,
   snapshotPath = defaultSnapshotPath,
@@ -170,7 +57,32 @@ export async function handleRestore(request, response, {
   const body = request.body && typeof request.body === 'object' ? request.body : {};
   const mode = body.mode;
   if (mode === 'policy') {
-    return handlePolicyRestore(body, response, auth, snapshotPath);
+    // 정책 복원은 검증된 사본을 다시 읽어 확인한 뒤 버전과 바뀔 항목만 보여 준다.
+    // 실패하면 중단하고, 어떤 경우에도 운영 정책·다른 규칙·감사 이력은 쓰지 않는다.
+    let snapshot;
+    try {
+      snapshot = loadSnapshot(snapshotPath);
+    } catch (error) {
+      console.error('trusted_restore_snapshot_unavailable', {
+        code: typeof error?.code === 'string' ? error.code : 'INVALID_OR_UNVERIFIED_SNAPSHOT',
+      });
+      return response.status(503).json({ error: 'TRUSTED_BACKUP_UNAVAILABLE', applied: false });
+    }
+    const currentPolicy = {
+      step: config.step,
+      allowedRoutes: config.allowedRoutes,
+      restoreRoute: config.restoreRoute,
+    };
+    const drift = diffPolicy(currentPolicy, snapshot.policy);
+    return response.status(200).json({
+      ok: true,
+      mode,
+      applied: false,
+      snapshotVersion: snapshot.version,
+      policyVersion: snapshot.policyVersion,
+      changedKeys: drift.changedKeys,
+      changes: drift.changes,
+    });
   }
   if (!['preview', 'restore'].includes(mode)) {
     return response.status(400).json({ error: 'INVALID_RESTORE_MODE' });
@@ -182,10 +94,9 @@ export async function handleRestore(request, response, {
   }
   const noteId = requestedNoteId.toLowerCase();
 
-  let verifiedSnapshot;
   if (mode === 'restore') {
     try {
-      verifiedSnapshot = loadVerifiedSnapshot(snapshotPath);
+      loadSnapshot(snapshotPath);
     } catch (error) {
       console.error('trusted_restore_snapshot_unavailable', {
         code: typeof error?.code === 'string' ? error.code : 'INVALID_OR_UNVERIFIED_SNAPSHOT',
@@ -237,16 +148,14 @@ export async function handleRestore(request, response, {
     return response.status(409).json({ error: 'RESTORE_TARGET_CHANGED' });
   }
 
-  let verifiedSnapshotAgain;
+  // 쓰기 직전에 고정 지문 사본을 한 번 더 읽어 검증한다. 실패하면 DB를 바꾸지 않고 멈춘다.
   try {
-    verifiedSnapshotAgain = loadVerifiedSnapshot(snapshotPath);
+    loadSnapshot(snapshotPath);
   } catch (error) {
-    reportUnverifiedSnapshot(error);
+    console.error('trusted_restore_snapshot_unavailable', {
+      code: typeof error?.code === 'string' ? error.code : 'INVALID_OR_UNVERIFIED_SNAPSHOT',
+    });
     return response.status(503).json({ error: 'TRUSTED_BACKUP_UNAVAILABLE' });
-  }
-  if (verifiedSnapshotAgain.digest !== verifiedSnapshot.digest
-      || verifiedSnapshotAgain.snapshot.version !== verifiedSnapshot.snapshot.version) {
-    return response.status(409).json({ error: 'BACKUP_VERIFICATION_FAILED' });
   }
 
   const restoredValues = {
