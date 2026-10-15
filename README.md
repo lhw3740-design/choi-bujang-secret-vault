@@ -18,7 +18,7 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 
 화면은 Supabase 세션의 access token을 `Authorization: Bearer`로 `/api/notes`에 보냅니다. 서버는 기존 `src/verify-login.mjs`를 사용해 Supabase 발급자, `authenticated` 대상, 만료 시각을 검증하고 실패하면 `401` JSON을 반환합니다. 브라우저가 보낸 user ID나 role은 사용하지 않습니다. `aleph.config.json`의 `identityProvider`에는 공개 가능한 issuer, audience, JWKS URL만 기록하며 비밀 키는 포함하지 않습니다.
 
-현재 `aleph.config.json`은 10단계이며 실제 Vercel 앱 URL, Supabase Auth 발급자 설정, 원본 자료 REST 경로를 기록합니다. 빌드된 `/aleph.json`에는 설정된 단계 번호가 반영됩니다.
+현재 `aleph.config.json`은 11단계이며 실제 Vercel 앱 URL, Supabase Auth 발급자 설정, 원본 자료 REST 경로를 기록합니다. 빌드된 `/aleph.json`에는 설정된 단계 번호가 반영됩니다.
 
 로그인한 사용자는 화면에서 가상 메모를 추가·수정·삭제할 수 있습니다. `POST /api/notes`는 `{id?, title, body}`를 받고, `id`가 없으면 서버가 UUID를 만듭니다. `GET /api/notes`는 검증된 사용자 ID의 메모 배열을 반환하고, `GET`, `PUT`, `DELETE /api/notes/:id`는 한 메모를 처리합니다. 데이터베이스 `content` 열은 API의 `body` 필드로 변환됩니다.
 
@@ -26,9 +26,7 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 
 5단계에서는 화면의 메모 자료 요청을 `/api/notes` 및 `/api/notes/:id` 서버 함수로 모읍니다. 함수는 서버 전용 `SUPABASE_SECRET_KEY`로 데이터베이스를 사용하고, 로그인 검증과 소유자 제한을 유지합니다. `aleph.config.json`의 `originalApiUrl`은 쿼리 없는 Supabase REST 자료 경로이며, 빌드가 이를 공개 배포 메타데이터 `/aleph.json`에도 포함합니다. `src/attack-check.mjs`의 제출 자기 점검은 해당 경로에 공개 publishable key로 익명 요청을 보내 실제 응답 상태만 기록합니다. 이 점검은 심판 판정이 아니며, 학습 DB 권한 SQL의 실행이나 실제 A 계정 화면 확인을 대신하지 않습니다.
 
-10단계의 메모 복구는 `POST /api/restore`가 복원 직전에 고정 SHA-256 지문으로 `restore-backup.json`을 다시 읽어 검증하고, 이후 서버 인증으로 확인한 사용자 ID와 비공개 `learning_note_backups`의 ID·소유자·내용 해시를 대조한 뒤 해당 사용자의 메모 한 건만 `learning_notes`에 복원합니다. 화면에서 메모 ID를 입력해 **백업과 변경 상태 미리보기**를 먼저 확인하고, **확인한 백업으로 이 메모 복구**를 눌러야 합니다. 백업 사본이 없거나 지문이 다르면 DB를 조회·수정하지 않고 `TRUSTED_BACKUP_UNAVAILABLE`로 중단합니다. 메모 백업 테이블은 [전용 마이그레이션](supabase/migrations/20261014083000_create_learning_note_backups.sql)을 적용하고, 침해 전에 신뢰한 메모 사본만 관리자 SQL Editor에서 넣어야 합니다. 마이그레이션 적용만으로 과거 내용이 백업되지는 않습니다. 현재 잘못된/변조된 자료에서 새 백업을 만들면 복구용 사본이 되지 않으므로, 반드시 침해 전 신뢰된 사본을 사용하세요.
-
-정책 복원은 별도 테이블 `learning_test_policy_state`의 시험용 정책에만 적용합니다. [정책 복원 마이그레이션](supabase/migrations/20261015010000_create_learning_test_policy_restore.sql)을 적용한 뒤 화면의 **시험 정책 복구**에서 **검증된 정책 사본과 차이 미리보기**를 눌러 사본 버전과 변경 항목을 확인하고, 확인 후 **미리 본 시험 정책 복구**를 눌러야 합니다. 이 경로는 고정 지문으로 검증한 `restore-backup.json`의 정책만 사용하며, revision 비교로 미리보기 뒤의 변경을 감지하고, 정책 변경 및 감사 기록을 한 DB 트랜잭션으로 저장합니다. 사본의 키만 복원해 그 외 시험 정책 키는 보존합니다. 실제 운영 설정인 `aleph.config.json`이나 다른 서비스 정책은 변경하지 않습니다. 정책 테이블이 아직 없으면 복원은 실패하므로 먼저 마이그레이션을 적용하세요.
+10단계의 메모 복구는 `POST /api/restore`가 복원 직전에 고정 SHA-256 지문으로 `restore-backup.json`을 다시 읽어 검증하고, 이후 서버 인증으로 확인한 사용자 ID와 비공개 `learning_note_backups`의 ID·소유자·내용 해시를 대조한 뒤 해당 사용자의 메모 한 건만 `learning_notes`에 복원합니다. 화면에서 메모 ID를 입력해 **백업과 변경 상태 미리보기**를 먼저 확인하고, **확인한 백업으로 이 메모 복구**를 눌러야 합니다. 백업 사본이 없거나 지문이 다르면 DB를 조회·수정하지 않고 `TRUSTED_BACKUP_UNAVAILABLE`로 중단합니다. 백업 테이블은 [전용 마이그레이션](supabase/migrations/20261014083000_create_learning_note_backups.sql)을 적용하고, 침해 전에 신뢰한 메모 사본만 관리자 SQL Editor에서 넣어야 합니다. 마이그레이션 적용만으로 과거 내용이 백업되지는 않습니다. 현재 잘못된/변조된 자료에서 새 백업을 만들면 복구용 사본이 되지 않으므로, 반드시 침해 전 신뢰된 사본을 사용하세요.
 
 사전 백업을 준비하는 운영자는 Supabase Dashboard → SQL Editor에서 먼저 마이그레이션 SQL을 실행합니다. 침해 전 신뢰된 원본이 `learning_notes`에 아직 있는 경우에만 다음 쿼리의 두 UUID를 해당 메모 ID와 소유자 ID로 바꿔 실행합니다. 쿼리는 내용을 비공개 백업 테이블로 복사하고 화면에 메모 본문을 출력하지 않습니다. 이미 메모가 변조·삭제된 뒤라면 현재 행을 백업하지 말고, 별도의 검증된 사본으로 백업 행을 채워야 합니다.
 
@@ -63,11 +61,27 @@ on conflict (note_id) do nothing;
 - 다른 사용자 메모 요청 거부: 성공 — 복구 거부
 - 1~9단계 정상·금지 요청 재시험: 성공 — 사용자 확인에 따라 모두 기대한 결과
 
-자동화 테스트는 `node --test test/restore.test.mjs`이며 모의 DB 동작을 확인합니다. 통과해도 실제 Supabase 마이그레이션 적용이나 계정·배포·심판 시험을 대신하지 않습니다.
+정책 복원(`mode: "policy"`)은 고정 지문으로 `restore-backup.json`을 다시 읽어 검증한 뒤 사본 버전과 바뀔 정책 항목만 보여 주며(`applied:false`), 검증에 실패하면 `TRUSTED_BACKUP_UNAVAILABLE`로 중단합니다. 배포 서버 파일·감사 이력은 쓰지 않습니다. 자동화 테스트는 `node --test test/restore.test.mjs`이며 실제 계정·DB·배포 시험을 대신하지 않습니다.
 
 `aleph.config.json`의 `allowedRoutes`에는 `GET`·`POST /api/notes`와 `GET`·`PUT`·`DELETE /api/notes/:id` 경로가 기록되어 있습니다.
 
 4~6단계 로컬 확인은 `node --test test/notes-api.test.mjs test/notes-crud.test.mjs test/package-starter.test.mjs test/r5.test.mjs`로 실행하고, 정적 산출물은 `npm run build -- --local`로 만듭니다. 판정기 가상 요청 순서는 `npm run decider:test`로 실행합니다. 이 테스트들은 모의 요청을 확인하며 실제 계정·기기 등록·배포·심판 시험을 대신하지 않습니다. `npm run bundle`은 실제 배포 `/api/notes`의 비로그인 요청과 설정된 원본 REST 경로의 익명 요청을 실행하고 그 응답 결과만 자기 점검에 기록합니다. 이 점검은 A/B 간 소유자 격리나 A의 화면 CRUD를 확인하지 않습니다. 배포에서는 A가 자기 메모를 읽고 추가·수정·삭제할 수 있는지, 원본 직접 요청이 거부되는지 별도로 확인하세요.
+
+## 11단계: 설치형 접속 화면과 기기 승인
+
+화면은 `/manifest.webmanifest`(앱 이름·아이콘)와 `/sw.js`를 가진 설치형 웹앱입니다. 서비스 워커는 오프라인 안내 화면(`/offline.html`)만 보관하고 `/api/*`, 로그인, 보호 자료 응답은 저장하지 않습니다. 오프라인이면 안내가 보이며 보호 자료는 열리지 않습니다. 따로 설치하는 접속 프로그램은 없습니다. **앱을 설치했다는 표시만으로 기기를 믿지 않습니다.**
+
+로그인한 뒤 화면은 `GET /api/device`로 서버가 판단한 기기 상태(`unregistered`·`pending`·`approved`·`revoked`)를 받습니다. `approved`일 때만 `/api/notes`를 호출하고 메모 추가·복구 화면을 엽니다. 상태 확인이 실패하거나 알 수 없는 값이면 닫힌 상태를 유지합니다. **이 화면 잠금은 사용자 화면의 안내이며, 실제 기기 차단은 반 엔진 릴레이의 `deviceRegistered` 확인과 `src/decider.mjs`가 맡습니다.** 이 저장소의 `/api/notes` 서버 함수는 이번 단계에서 바꾸지 않았습니다.
+
+**이 기기 승인 요청**은 `POST /api/device`로 대기 기록만 만듭니다. 서버가 무작위 값을 만들어 JavaScript가 읽을 수 없는 `HttpOnly` 쿠키(`__Host-aleph_device`)에 담고, 서버에는 그 값의 SHA-256 지문과 로그인 사용자 ID만 `device_approvals` 테이블에 둡니다. 브라우저 저장소(localStorage·sessionStorage·IndexedDB)에는 기기 키·토큰·승인 상태를 넣지 않습니다. Supabase 로그인 세션도 `persistSession: false`로 메모리에만 두므로, 새로고침하면 다시 로그인해야 합니다. 요청 본문의 상태·사용자·기기 값은 읽지 않으며, 승인 버튼은 없습니다. `approved`는 운영자가 Supabase SQL Editor에서만 바꿉니다. 한계: 쿠키 값은 그 기기 안의 무기명 값이라, 기기가 악성코드에 감염되면 빼내질 수 있습니다. 더 강한 기기 묶음(패스키 등)은 별도 계약이 필요합니다.
+
+적용 순서:
+
+1. Supabase SQL Editor에서 [기기 승인 마이그레이션](supabase/migrations/20261015060000_create_device_approvals.sql)을 실행합니다.
+2. 배포 주소에서 시험 계정으로 로그인하면 **승인 전에는 메모가 표시되지 않고** 상태가 `unregistered`로 보입니다. **이 기기 승인 요청**을 누르면 `pending`이 됩니다.
+3. Table Editor의 `device_approvals`에서 내 요청 행을 확인하고, 마이그레이션 파일의 승인 예시 SQL로 `approved`로 바꿉니다. 새로고침하면 기존 화면이 열립니다. `revoked`로 바꾸면 다시 닫힙니다.
+
+자동 확인은 `node --test test/device.test.mjs`입니다(모의 DB). 실제 배포·계정·심판 시험을 대신하지 않으며, 실행하지 않은 시험은 미실행으로 남깁니다.
 
 ## 시작 틀의 자동 처리
 
@@ -147,7 +161,3 @@ curl -fsS 'https://실제-배포주소.vercel.app/data.json' |
 ## 다음 단계의 코딩 도구에 전달할 규칙
 
 [AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다. `src/decider.mjs`와 `src/detect.mjs`의 로컬 시험은 반 엔진이나 운영 심판의 결과가 아닙니다.
-
-11단계 저장점 기록(2026-10-15): 로컬 자동 시험 통과. 실제 배포 기기 승인 시험은 확인한 결과만 이 아래에 기록합니다.
-
-11단계 저장점 기록(2026-10-15): 로컬 자동 시험 통과. 실제 배포 기기 승인 시험은 확인한 결과만 이 아래에 기록합니다.

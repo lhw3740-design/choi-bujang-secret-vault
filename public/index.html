@@ -3,7 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BYTE BACK | 점령된 자료실</title>
+  <title>BYTE BACK | 내 자료실</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#101a28">
+  <link rel="icon" type="image/png" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
     body { margin: 0; min-height: 100vh; background: #101a28; color: #ecf4ff; }
@@ -27,10 +31,15 @@
     .note-form textarea { min-height: 90px; resize: vertical; }
     .note-form button, .note-actions button { color: #101a28; background: #8ad8df; font-weight: 700; cursor: pointer; }
     .note-form button:disabled, .note-actions button:disabled { cursor: not-allowed; opacity: .6; }
-    .note-form [hidden] { display: none; }
+    .note-form[hidden], .note-form [hidden] { display: none; }
     .note-actions { display: flex; gap: 8px; margin-top: 14px; }
     .note-actions button { flex: 1; }
     .note-actions .delete-note { background: #ffc2cb; }
+    .offline { margin: 0 0 18px; padding: 12px 16px; border: 1px solid #e0b34f; border-radius: 12px; color: #ffefc2; background: #5a45103a; }
+    .offline[hidden], .device [hidden] { display: none; }
+    .device { margin: 26px 0; padding: 18px; border: 1px solid #51667c; border-radius: 14px; background: #1a2a3d; }
+    .device button { box-sizing: border-box; width: 100%; padding: 11px 12px; border: 1px solid #71879f; border-radius: 8px; font: inherit; color: #101a28; background: #8ad8df; font-weight: 700; cursor: pointer; }
+    .device button:disabled { cursor: not-allowed; opacity: .6; }
     ul { list-style: none; display: grid; gap: 12px; padding: 0; }
     li { border: 1px solid #51667c; border-radius: 14px; padding: 17px 19px; background: #1a2a3d; }
     strong { display: block; font-size: 18px; margin-bottom: 5px; }
@@ -39,10 +48,11 @@
 </head>
 <body>
   <main>
-    <div class="eyebrow">BYTE BACK · 1단계 피해 확인</div>
-    <h1>점령된 자료실</h1>
-    <p>지금은 보호 장치가 없는 상태입니다. 아래 기록은 모두 실습을 위해 만든 가상 자료입니다.</p>
-    <div class="notice">로그인해야 메모를 추가·수정·삭제할 수 있습니다. 목록은 로그인 계정 기준입니다. 단, ID를 직접 지정하는 API에는 아직 소유자 검사가 없어 다른 계정의 메모에도 접근할 수 있습니다.</div>
+    <div class="eyebrow">BYTE BACK · 11단계 나만의 접속 앱</div>
+    <h1>내 자료실</h1>
+    <p>아래 기록은 모두 실습을 위해 만든 가상 자료입니다. 로그인한 뒤, 서버가 이 기기를 승인 기기로 확인해야 자료가 열립니다.</p>
+    <div id="offline-banner" class="offline" role="status" hidden>오프라인입니다. 보호 자료는 이 기기에 저장하지 않으므로 연결이 돌아오기 전에는 열 수 없습니다.</div>
+    <div class="notice">앱으로 설치했다는 표시만으로는 기기를 믿지 않습니다. 기기 승인 여부는 서버가 확인하며, 승인 전에는 보호 자료를 표시하지 않습니다.</div>
     <section class="auth" aria-labelledby="auth-heading">
       <h2 id="auth-heading">Supabase 로그인</h2>
       <p id="auth-state" aria-live="polite">로그인 상태를 확인하는 중입니다.</p>
@@ -58,6 +68,11 @@
       <button id="logout-button" type="button" hidden>로그아웃</button>
       <p id="auth-message" role="status" aria-live="polite"></p>
     </section>
+    <section id="device-section" class="device" aria-labelledby="device-heading" hidden>
+      <h2 id="device-heading">기기 승인</h2>
+      <p id="device-state" role="status" aria-live="polite">기기 상태를 확인하는 중입니다.</p>
+      <button id="device-request-button" type="button" hidden>이 기기 승인 요청</button>
+    </section>
     <form id="add-note-form" class="note-form" hidden>
       <h2>가상 메모 추가</h2>
       <label>제목<input name="title" maxlength="200" required></label>
@@ -71,12 +86,6 @@
       <p id="restore-preview" role="status" aria-live="polite"></p>
       <button id="restore-confirm-button" type="button" hidden>확인한 백업으로 이 메모 복구</button>
     </form>
-    <section id="restore-policy-section" class="note-form" hidden>
-      <h2>시험 정책 복구</h2>
-      <button id="policy-preview-button" type="button">검증된 정책 사본과 차이 미리보기</button>
-      <p id="policy-preview" role="status" aria-live="polite"></p>
-      <button id="policy-restore-button" type="button" hidden>미리 본 시험 정책 복구</button>
-    </section>
     <ul id="notes" aria-live="polite"><li>로그인해야 가상 메모를 볼 수 있습니다.</li></ul>
   </main>
   <script type="module">
@@ -95,15 +104,16 @@
     const restorePreview = document.querySelector('#restore-preview');
     const restorePreviewButton = document.querySelector('#restore-preview-button');
     const restoreConfirmButton = document.querySelector('#restore-confirm-button');
-    const restorePolicySection = document.querySelector('#restore-policy-section');
-    const policyPreviewButton = document.querySelector('#policy-preview-button');
-    const policyPreview = document.querySelector('#policy-preview');
-    const policyRestoreButton = document.querySelector('#policy-restore-button');
+    const deviceSection = document.querySelector('#device-section');
+    const deviceStateText = document.querySelector('#device-state');
+    const deviceRequestButton = document.querySelector('#device-request-button');
+    const offlineBanner = document.querySelector('#offline-banner');
     const configured = Boolean(supabaseUrl.trim() && supabasePublishableKey.trim());
     let noteRequestId = 0;
     let currentSession = null;
     let pendingRestore = null;
-    let pendingPolicyRestore = null;
+    let deviceState = 'unknown';
+    let deviceCheckId = 0;
 
     async function requestNoteApi(session, path, method = 'GET', payload) {
       if (!session?.access_token) throw new Error('로그인이 필요합니다.');
@@ -138,6 +148,11 @@
       const requestId = ++noteRequestId;
       if (!session?.access_token) {
         showNotesMessage('로그인해야 가상 메모를 볼 수 있습니다.');
+        return;
+      }
+
+      if (deviceState !== 'approved') {
+        showNotesMessage('기기 승인 전에는 보호 자료를 표시하지 않습니다.');
         return;
       }
 
@@ -237,20 +252,74 @@
       currentSession = session;
       loginForm.hidden = signedIn;
       logoutButton.hidden = !signedIn;
-      addNoteForm.hidden = !signedIn;
-      restoreNoteForm.hidden = !signedIn;
-      restorePolicySection.hidden = !signedIn;
+      deviceSection.hidden = !signedIn;
       if (!signedIn) {
+        deviceState = 'unknown';
+        deviceCheckId += 1;
+        applyDeviceState();
         pendingRestore = null;
         restoreConfirmButton.hidden = true;
         restorePreview.textContent = '';
-        pendingPolicyRestore = null;
-        policyRestoreButton.hidden = true;
-        policyPreview.textContent = '';
       }
       authState.textContent = signedIn
         ? `로그인됨: ${session.user.email || '이메일 계정'}`
         : '로그아웃 상태입니다.';
+    }
+
+    const DEVICE_MESSAGES = {
+      unknown: '기기 상태를 확인하는 중입니다.',
+      unavailable: '서버에서 기기 상태를 확인하지 못했습니다. 확인되기 전에는 보호 자료를 열지 않습니다.',
+      unregistered: '이 기기는 아직 승인 요청이 없습니다. 요청하면 운영자 확인을 기다리는 상태가 됩니다.',
+      pending: '승인 대기 중입니다. 서버에서 승인이 확인되기 전에는 보호 자료가 표시되지 않습니다.',
+      approved: '서버가 이 기기를 승인 기기로 확인했습니다.',
+      revoked: '이 기기의 승인이 회수되었습니다. 보호 자료는 표시되지 않습니다.',
+    };
+
+    function applyDeviceState() {
+      const approved = deviceState === 'approved' && Boolean(currentSession?.user);
+      deviceStateText.textContent = DEVICE_MESSAGES[deviceState] || DEVICE_MESSAGES.unavailable;
+      deviceRequestButton.hidden = deviceState !== 'unregistered';
+      addNoteForm.hidden = !approved;
+      restoreNoteForm.hidden = !approved;
+      if (!approved) {
+        // 승인을 잃거나 아직 확인되지 않으면 목록을 즉시 비우고 진행 중인 자료 요청 결과를 무효화한다.
+        noteRequestId += 1;
+        showNotesMessage(currentSession?.user
+          ? '기기 승인 전에는 보호 자료를 표시하지 않습니다.'
+          : '로그인해야 가상 메모를 볼 수 있습니다.');
+        pendingRestore = null;
+        restoreConfirmButton.hidden = true;
+        restorePreview.textContent = '';
+      }
+    }
+
+    async function syncDevice(session) {
+      const checkId = ++deviceCheckId;
+      deviceState = 'unknown';
+      applyDeviceState();
+      if (!session?.access_token) return;
+      let next = 'unavailable';
+      try {
+        const result = await requestNoteApi(session, '/api/device');
+        if (['unregistered', 'pending', 'approved', 'revoked'].includes(result?.state)) next = result.state;
+      } catch {
+        next = 'unavailable';
+      }
+      if (checkId !== deviceCheckId) return;
+      deviceState = next;
+      applyDeviceState();
+      await loadNotes(session);
+    }
+
+    function showConnectionState() {
+      offlineBanner.hidden = navigator.onLine;
+    }
+    window.addEventListener('online', showConnectionState);
+    window.addEventListener('offline', showConnectionState);
+    showConnectionState();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
 
     if (!configured) {
@@ -260,10 +329,13 @@
       showNotesMessage('로그인 설정이 필요합니다.');
     } else {
       try {
-        const supabase = createClient(supabaseUrl, supabasePublishableKey);
+        // 로그인 세션(토큰)은 메모리에만 두고 브라우저 저장소에 남기지 않는다.
+        const supabase = createClient(supabaseUrl, supabasePublishableKey, {
+          auth: { persistSession: false, detectSessionInUrl: false },
+        });
         supabase.auth.onAuthStateChange((_event, session) => {
           renderAuthState(session);
-          void loadNotes(session);
+          void syncDevice(session);
         });
 
         addNoteForm.addEventListener('submit', async event => {
@@ -313,53 +385,6 @@
           }
         });
 
-        policyPreviewButton.addEventListener('click', async () => {
-          policyPreviewButton.disabled = true;
-          policyRestoreButton.hidden = true;
-          pendingPolicyRestore = null;
-          policyPreview.textContent = '검증된 정책 사본을 읽고 시험 정책 차이를 확인하는 중입니다.';
-          try {
-            const result = await requestNoteApi(currentSession, '/api/restore', 'POST', {
-              mode: 'policy',
-              action: 'preview',
-            });
-            pendingPolicyRestore = result;
-            const changes = result.changes.length
-              ? result.changes.map(change => `${change.key}: ${JSON.stringify(change.from)} → ${JSON.stringify(change.to)}`).join(' · ')
-              : '변경 항목 없음';
-            policyPreview.textContent = `사본 ${result.backupVersion} · revision ${result.currentRevision} · ${changes}`;
-            policyRestoreButton.hidden = result.changedKeys.length === 0;
-          } catch (error) {
-            policyPreview.textContent = error.message;
-          } finally {
-            policyPreviewButton.disabled = false;
-          }
-        });
-
-        policyRestoreButton.addEventListener('click', async () => {
-          if (!pendingPolicyRestore || !currentSession?.access_token) return;
-          policyRestoreButton.disabled = true;
-          try {
-            const confirmed = window.confirm(
-              `검증된 사본 ${pendingPolicyRestore.backupVersion}의 시험 정책을 복구할까요? 변경 항목: ${pendingPolicyRestore.changedKeys.join(', ')}`,
-            );
-            if (!confirmed) return;
-            const result = await requestNoteApi(currentSession, '/api/restore', 'POST', {
-              mode: 'policy',
-              action: 'restore',
-              confirmHash: pendingPolicyRestore.backupHash,
-              expectedRevision: pendingPolicyRestore.currentRevision,
-            });
-            pendingPolicyRestore = null;
-            policyRestoreButton.hidden = true;
-            policyPreview.textContent = `시험 정책 복구 완료 · revision ${result.currentRevision} · 감사 기록 보존`;
-          } catch (error) {
-            policyPreview.textContent = error.message;
-          } finally {
-            policyRestoreButton.disabled = false;
-          }
-        });
-
         restoreNoteForm.elements.noteId.addEventListener('input', () => {
           pendingRestore = null;
           restoreConfirmButton.hidden = true;
@@ -389,6 +414,21 @@
             restorePreview.textContent = error.message;
           } finally {
             restoreConfirmButton.disabled = false;
+          }
+        });
+
+        deviceRequestButton.addEventListener('click', async () => {
+          deviceRequestButton.disabled = true;
+          try {
+            const result = await requestNoteApi(currentSession, '/api/device', 'POST', { action: 'request' });
+            authMessage.textContent = '기기 승인을 요청했습니다. 서버의 승인 확인을 기다려 주세요.';
+            deviceState = ['pending', 'approved', 'revoked'].includes(result?.state) ? result.state : 'pending';
+            applyDeviceState();
+            await loadNotes(currentSession);
+          } catch (error) {
+            authMessage.textContent = error.message;
+          } finally {
+            deviceRequestButton.disabled = false;
           }
         });
 

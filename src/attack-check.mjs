@@ -4,7 +4,7 @@ import { supabasePublishableKey } from '../public/supabase-config.js';
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
   if (config.step !== 1 && config.step !== 3 && config.step !== 4
-      && config.step !== 5 && config.step !== 6 && config.step !== 7 && config.step !== 8 && config.step !== 9 && config.step !== 10) {
+      && config.step !== 5 && config.step !== 6 && config.step !== 7 && config.step !== 8 && config.step !== 9 && config.step !== 10 && config.step !== 11) {
     throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   }
   let app;
@@ -58,6 +58,7 @@ export async function runAttackChecks(config) {
     return [originalResult, await checkAnonymousNotesApi(app)];
   }
   if (config.step === 3 || config.step === 4) return [await checkAnonymousNotesApi(app)];
+  if (config.step === 11) return [await checkAnonymousNotesApi(app), await checkAnonymousDeviceApi(app)];
   if (typeof config.sampleMarker !== 'string' || !config.sampleMarker) throw new Error('가상 메모의 확인 표시를 넣어 주세요.');
   const response = await fetch(new URL('/data.json', app), {
     redirect: 'error', signal: AbortSignal.timeout(10000),
@@ -104,4 +105,28 @@ async function checkAnonymousNotesApi(app) {
       ? `인증 없는 GET /api/notes: HTTP ${response.status}, JSON 오류 응답 확인`
       : `인증 없는 GET /api/notes: HTTP ${response.status}, ${typeof body?.error === 'string' ? 'JSON 오류 응답' : '거부 오류 없는 JSON 응답'}`,
   };
+}
+
+async function checkAnonymousDeviceApi(app) {
+  const expected = '로그인 없는 기기 상태 요청이 401 또는 403 JSON 오류로 거부됨';
+  const response = await fetch(new URL('/api/device', app), {
+    method: 'GET',
+    headers: { accept: 'application/json' },
+    redirect: 'error',
+    signal: AbortSignal.timeout(10000),
+  });
+  let body;
+  try {
+    body = JSON.parse(await response.text());
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
+    return { attackId: 'anonymous_device_status', expected,
+      observed: `인증 없는 GET /api/device: HTTP ${response.status}, JSON 오류 응답 아님` };
+  }
+  const rejected = (response.status === 401 || response.status === 403)
+    && typeof body?.error === 'string' && body.error.length > 0;
+  return { attackId: 'anonymous_device_status', expected,
+    observed: rejected
+      ? `인증 없는 GET /api/device: HTTP ${response.status}, JSON 오류 응답 확인`
+      : `인증 없는 GET /api/device: HTTP ${response.status}, 거부 확인 안 됨` };
 }
