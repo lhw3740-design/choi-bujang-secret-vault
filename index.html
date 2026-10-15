@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BYTE BACK | 내 자료실</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#101a28">
+  <link rel="icon" type="image/png" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; background: #101a28; color: #ecf4ff; }
+    main { max-width: 760px; margin: 0 auto; padding: 44px 22px 64px; }
+    .eyebrow { color: #8ad8df; font-size: 14px; font-weight: 700; letter-spacing: .08em; }
+    h1 { margin: 16px 0; font-size: clamp(30px, 7vw, 48px); line-height: 1.2; }
+    p { font-size: 17px; line-height: 1.7; color: #bfd0e5; }
+    .notice { margin: 26px 0; padding: 18px; border: 1px solid #d07384; border-radius: 14px; color: #ffe3e8; background: #612a3544; }
+    .auth { margin: 26px 0; padding: 18px; border: 1px solid #51667c; border-radius: 14px; background: #1a2a3d; }
+    .auth form { display: grid; gap: 12px; }
+    .auth label { display: grid; gap: 6px; color: #bfd0e5; }
+    .auth input, .auth button { box-sizing: border-box; width: 100%; padding: 11px 12px; border: 1px solid #71879f; border-radius: 8px; font: inherit; }
+    .auth input { color: #101a28; background: #ecf4ff; }
+    .auth button { color: #101a28; background: #8ad8df; font-weight: 700; cursor: pointer; }
+    .auth button:disabled { cursor: not-allowed; opacity: .6; }
+    .auth [hidden] { display: none; }
+    #auth-message { min-height: 1.5em; margin: 12px 0 0; font-size: 14px; }
+    .note-form { display: grid; gap: 12px; margin: 26px 0; padding: 18px; border: 1px solid #51667c; border-radius: 14px; background: #1a2a3d; }
+    .note-form label { display: grid; gap: 6px; color: #bfd0e5; }
+    .note-form input, .note-form textarea, .note-form button, .note-actions button { box-sizing: border-box; padding: 10px 12px; border: 1px solid #71879f; border-radius: 8px; font: inherit; }
+    .note-form textarea { min-height: 90px; resize: vertical; }
+    .note-form button, .note-actions button { color: #101a28; background: #8ad8df; font-weight: 700; cursor: pointer; }
+    .note-form button:disabled, .note-actions button:disabled { cursor: not-allowed; opacity: .6; }
+    .note-form[hidden], .note-form [hidden] { display: none; }
+    .note-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .note-actions button { flex: 1; }
+    .note-actions .delete-note { background: #ffc2cb; }
+    .offline { margin: 0 0 18px; padding: 12px 16px; border: 1px solid #e0b34f; border-radius: 12px; color: #ffefc2; background: #5a45103a; }
+    .offline[hidden], .device [hidden] { display: none; }
+    .device { margin: 26px 0; padding: 18px; border: 1px solid #51667c; border-radius: 14px; background: #1a2a3d; }
+    .device button { box-sizing: border-box; width: 100%; padding: 11px 12px; border: 1px solid #71879f; border-radius: 8px; font: inherit; color: #101a28; background: #8ad8df; font-weight: 700; cursor: pointer; }
+    .device button:disabled { cursor: not-allowed; opacity: .6; }
+    ul { list-style: none; display: grid; gap: 12px; padding: 0; }
+    li { border: 1px solid #51667c; border-radius: 14px; padding: 17px 19px; background: #1a2a3d; }
+    strong { display: block; font-size: 18px; margin-bottom: 5px; }
+    li span { color: #bfd0e5; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">BYTE BACK · 11단계 나만의 접속 앱</div>
+    <h1>내 자료실</h1>
+    <p>아래 기록은 모두 실습을 위해 만든 가상 자료입니다. 로그인한 뒤, 서버가 이 기기를 승인 기기로 확인해야 자료가 열립니다.</p>
+    <div id="offline-banner" class="offline" role="status" hidden>오프라인입니다. 보호 자료는 이 기기에 저장하지 않으므로 연결이 돌아오기 전에는 열 수 없습니다.</div>
+    <div class="notice">앱으로 설치했다는 표시만으로는 기기를 믿지 않습니다. 기기 승인 여부는 서버가 확인하며, 승인 전에는 보호 자료를 표시하지 않습니다.</div>
+    <section class="auth" aria-labelledby="auth-heading">
+      <h2 id="auth-heading">Supabase 로그인</h2>
+      <p id="auth-state" aria-live="polite">로그인 상태를 확인하는 중입니다.</p>
+      <form id="login-form">
+        <label>이메일
+          <input id="email" name="email" type="email" autocomplete="username" required>
+        </label>
+        <label>비밀번호
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button id="login-button" type="submit">로그인</button>
+      </form>
+      <button id="logout-button" type="button" hidden>로그아웃</button>
+      <p id="auth-message" role="status" aria-live="polite"></p>
+    </section>
+    <section id="device-section" class="device" aria-labelledby="device-heading" hidden>
+      <h2 id="device-heading">기기 승인</h2>
+      <p id="device-state" role="status" aria-live="polite">기기 상태를 확인하는 중입니다.</p>
+      <button id="device-request-button" type="button" hidden>이 기기 승인 요청</button>
+    </section>
+    <form id="add-note-form" class="note-form" hidden>
+      <h2>가상 메모 추가</h2>
+      <label>제목<input name="title" maxlength="200" required></label>
+      <label>내용<textarea name="body" maxlength="10000" required></textarea></label>
+      <button type="submit">메모 추가</button>
+    </form>
+    <form id="restore-note-form" class="note-form" hidden>
+      <h2>검증된 백업에서 메모 복구</h2>
+      <label>복구 대상 메모 ID<input name="noteId" type="text" inputmode="text" pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}" required></label>
+      <button id="restore-preview-button" type="submit">백업과 변경 상태 미리보기</button>
+      <p id="restore-preview" role="status" aria-live="polite"></p>
+      <button id="restore-confirm-button" type="button" hidden>확인한 백업으로 이 메모 복구</button>
+    </form>
+    <ul id="notes" aria-live="polite"><li>로그인해야 가상 메모를 볼 수 있습니다.</li></ul>
+  </main>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
+    import { supabasePublishableKey, supabaseUrl } from './supabase-config.js';
+
+    const list = document.querySelector('#notes');
+    const loginForm = document.querySelector('#login-form');
+    const loginButton = document.querySelector('#login-button');
+    const logoutButton = document.querySelector('#logout-button');
+    const authState = document.querySelector('#auth-state');
+    const authMessage = document.querySelector('#auth-message');
+    const passwordInput = document.querySelector('#password');
+    const addNoteForm = document.querySelector('#add-note-form');
+    const restoreNoteForm = document.querySelector('#restore-note-form');
+    const restorePreview = document.querySelector('#restore-preview');
+    const restorePreviewButton = document.querySelector('#restore-preview-button');
+    const restoreConfirmButton = document.querySelector('#restore-confirm-button');
+    const deviceSection = document.querySelector('#device-section');
+    const deviceStateText = document.querySelector('#device-state');
+    const deviceRequestButton = document.querySelector('#device-request-button');
+    const offlineBanner = document.querySelector('#offline-banner');
+    const configured = Boolean(supabaseUrl.trim() && supabasePublishableKey.trim());
+    let noteRequestId = 0;
+    let currentSession = null;
+    let pendingRestore = null;
+    let deviceState = 'unknown';
+    let deviceCheckId = 0;
+
+    async function requestNoteApi(session, path, method = 'GET', payload) {
+      if (!session?.access_token) throw new Error('로그인이 필요합니다.');
+      const response = await fetch(path, {
+        method,
+        cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          ...(payload ? { 'Content-Type': 'application/json' } : {}),
+        },
+        ...(payload ? { body: JSON.stringify(payload) } : {}),
+      });
+      if (response.status === 204) return null;
+      const data = await response.json();
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('로그인이 확인되지 않아 자료를 변경할 수 없습니다.');
+        }
+        const code = typeof data.code === 'string' ? ` · 코드 ${data.code}` : '';
+        throw new Error(`${data.error || '자료 요청 실패'}${code} (HTTP ${response.status})`);
+      }
+      return data;
+    }
+
+    function showNotesMessage(message) {
+      const item = document.createElement('li');
+      item.textContent = message;
+      list.replaceChildren(item);
+    }
+
+    async function loadNotes(session) {
+      const requestId = ++noteRequestId;
+      if (!session?.access_token) {
+        showNotesMessage('로그인해야 가상 메모를 볼 수 있습니다.');
+        return;
+      }
+
+      if (deviceState !== 'approved') {
+        showNotesMessage('기기 승인 전에는 보호 자료를 표시하지 않습니다.');
+        return;
+      }
+
+      showNotesMessage('가상 자료를 불러오는 중입니다.');
+      try {
+        const response = await fetch('/api/notes', {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          const message = response.status === 401 || response.status === 403
+            ? '로그인이 확인되지 않아 자료를 표시할 수 없습니다.'
+            : `자료를 불러오지 못했습니다: ${data.error || `HTTP ${response.status}`}`;
+          throw new Error(message);
+        }
+        if (!Array.isArray(data)) throw new Error('자료 형식이 맞지 않습니다.');
+        if (requestId !== noteRequestId) return;
+        list.replaceChildren(...data.map(note => {
+          const item = document.createElement('li');
+          const title = document.createElement('strong');
+          const content = document.createElement('span');
+          const actions = document.createElement('div');
+          const editButton = document.createElement('button');
+          const deleteButton = document.createElement('button');
+          const editForm = document.createElement('form');
+          const titleInput = document.createElement('input');
+          const bodyInput = document.createElement('textarea');
+          const saveButton = document.createElement('button');
+          const cancelButton = document.createElement('button');
+
+          title.textContent = note.title;
+          content.textContent = note.body;
+          actions.className = 'note-actions';
+          editButton.type = 'button';
+          editButton.textContent = '수정';
+          deleteButton.type = 'button';
+          deleteButton.textContent = '삭제';
+          deleteButton.className = 'delete-note';
+          actions.append(editButton, deleteButton);
+
+          editForm.className = 'note-form';
+          editForm.hidden = true;
+          titleInput.value = note.title;
+          titleInput.maxLength = 200;
+          titleInput.required = true;
+          titleInput.setAttribute('aria-label', '메모 제목');
+          bodyInput.value = note.body;
+          bodyInput.maxLength = 10000;
+          bodyInput.required = true;
+          bodyInput.setAttribute('aria-label', '메모 내용');
+          saveButton.type = 'submit';
+          saveButton.textContent = '저장';
+          cancelButton.type = 'button';
+          cancelButton.textContent = '취소';
+          editForm.append(titleInput, bodyInput, saveButton, cancelButton);
+
+          editButton.addEventListener('click', () => { editForm.hidden = false; });
+          cancelButton.addEventListener('click', () => { editForm.hidden = true; });
+          editForm.addEventListener('submit', async event => {
+            event.preventDefault();
+            saveButton.disabled = true;
+            try {
+              await requestNoteApi(currentSession, `/api/notes/${encodeURIComponent(note.id)}`, 'PUT', {
+                title: titleInput.value,
+                body: bodyInput.value,
+              });
+              authMessage.textContent = '메모를 수정했습니다.';
+              await loadNotes(currentSession);
+            } catch (error) {
+              authMessage.textContent = error.message;
+            } finally {
+              saveButton.disabled = false;
+            }
+          });
+          deleteButton.addEventListener('click', async () => {
+            deleteButton.disabled = true;
+            try {
+              await requestNoteApi(currentSession, `/api/notes/${encodeURIComponent(note.id)}`, 'DELETE');
+              authMessage.textContent = '메모를 삭제했습니다.';
+              await loadNotes(currentSession);
+            } catch (error) {
+              authMessage.textContent = error.message;
+              deleteButton.disabled = false;
+            }
+          });
+          item.append(title, content, actions, editForm);
+          return item;
+        }));
+      } catch (error) {
+        if (requestId === noteRequestId) showNotesMessage(error.message);
+      }
+    }
+
+    function renderAuthState(session) {
+      const signedIn = Boolean(session?.user);
+      currentSession = session;
+      loginForm.hidden = signedIn;
+      logoutButton.hidden = !signedIn;
+      deviceSection.hidden = !signedIn;
+      if (!signedIn) {
+        deviceState = 'unknown';
+        deviceCheckId += 1;
+        applyDeviceState();
+        pendingRestore = null;
+        restoreConfirmButton.hidden = true;
+        restorePreview.textContent = '';
+      }
+      authState.textContent = signedIn
+        ? `로그인됨: ${session.user.email || '이메일 계정'}`
+        : '로그아웃 상태입니다.';
+    }
+
+    const DEVICE_MESSAGES = {
+      unknown: '기기 상태를 확인하는 중입니다.',
+      unavailable: '서버에서 기기 상태를 확인하지 못했습니다. 확인되기 전에는 보호 자료를 열지 않습니다.',
+      unregistered: '이 기기는 아직 승인 요청이 없습니다. 요청하면 운영자 확인을 기다리는 상태가 됩니다.',
+      pending: '승인 대기 중입니다. 서버에서 승인이 확인되기 전에는 보호 자료가 표시되지 않습니다.',
+      approved: '서버가 이 기기를 승인 기기로 확인했습니다.',
+      revoked: '이 기기의 승인이 회수되었습니다. 보호 자료는 표시되지 않습니다.',
+    };
+
+    function applyDeviceState() {
+      const approved = deviceState === 'approved' && Boolean(currentSession?.user);
+      deviceStateText.textContent = DEVICE_MESSAGES[deviceState] || DEVICE_MESSAGES.unavailable;
+      deviceRequestButton.hidden = deviceState !== 'unregistered';
+      addNoteForm.hidden = !approved;
+      restoreNoteForm.hidden = !approved;
+      if (!approved) {
+        pendingRestore = null;
+        restoreConfirmButton.hidden = true;
+        restorePreview.textContent = '';
+      }
+    }
+
+    async function syncDevice(session) {
+      const checkId = ++deviceCheckId;
+      deviceState = 'unknown';
+      applyDeviceState();
+      if (!session?.access_token) return;
+      let next = 'unavailable';
+      try {
+        const result = await requestNoteApi(session, '/api/device');
+        if (['unregistered', 'pending', 'approved', 'revoked'].includes(result?.state)) next = result.state;
+      } catch {
+        next = 'unavailable';
+      }
+      if (checkId !== deviceCheckId) return;
+      deviceState = next;
+      applyDeviceState();
+      await loadNotes(session);
+    }
+
+    function showConnectionState() {
+      offlineBanner.hidden = navigator.onLine;
+    }
+    window.addEventListener('online', showConnectionState);
+    window.addEventListener('offline', showConnectionState);
+    showConnectionState();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
+    if (!configured) {
+      loginButton.disabled = true;
+      authState.textContent = '로그아웃 상태입니다.';
+      authMessage.textContent = '로그인 설정이 필요합니다. public/supabase-config.js에 Supabase Project URL과 publishable key를 입력하세요.';
+      showNotesMessage('로그인 설정이 필요합니다.');
+    } else {
+      try {
+        const supabase = createClient(supabaseUrl, supabasePublishableKey);
+        supabase.auth.onAuthStateChange((_event, session) => {
+          renderAuthState(session);
+          void syncDevice(session);
+        });
+
+        addNoteForm.addEventListener('submit', async event => {
+          event.preventDefault();
+          const submitButton = addNoteForm.querySelector('button[type="submit"]');
+          submitButton.disabled = true;
+          try {
+            await requestNoteApi(currentSession, '/api/notes', 'POST', {
+              title: addNoteForm.elements.title.value,
+              body: addNoteForm.elements.body.value,
+            });
+            addNoteForm.reset();
+            authMessage.textContent = '메모를 추가했습니다.';
+            await loadNotes(currentSession);
+          } catch (error) {
+            authMessage.textContent = error.message;
+          } finally {
+            submitButton.disabled = false;
+          }
+        });
+
+        restoreNoteForm.addEventListener('submit', async event => {
+          event.preventDefault();
+          restorePreviewButton.disabled = true;
+          restoreConfirmButton.hidden = true;
+          pendingRestore = null;
+          restorePreview.textContent = '검증된 백업을 확인하는 중입니다.';
+          try {
+            const result = await requestNoteApi(currentSession, '/api/restore', 'POST', {
+              mode: 'preview',
+              noteId: restoreNoteForm.elements.noteId.value.trim(),
+            });
+            pendingRestore = result;
+            restorePreview.textContent = [
+              `백업 버전: ${result.snapshotVersion}`,
+              `검증 시각: ${result.verifiedAt}`,
+              `현재 메모: ${result.currentState}`,
+              `변경 항목: ${result.changedFields.length ? result.changedFields.join(', ') : '없음'}`,
+              `백업 해시: ${result.backupHash}`,
+              `현재 해시: ${result.currentHash || '메모 없음'}`,
+            ].join(' · ');
+            restoreConfirmButton.hidden = false;
+          } catch (error) {
+            restorePreview.textContent = error.message;
+          } finally {
+            restorePreviewButton.disabled = false;
+          }
+        });
+
+        restoreNoteForm.elements.noteId.addEventListener('input', () => {
+          pendingRestore = null;
+          restoreConfirmButton.hidden = true;
+          restorePreview.textContent = '';
+        });
+
+        restoreConfirmButton.addEventListener('click', async () => {
+          if (!pendingRestore || !currentSession?.access_token) return;
+          restoreConfirmButton.disabled = true;
+          try {
+            const confirmed = window.confirm(
+              `백업 버전 ${pendingRestore.snapshotVersion}의 메모 ${pendingRestore.noteId}를 복구할까요?`,
+            );
+            if (!confirmed) return;
+            await requestNoteApi(currentSession, '/api/restore', 'POST', {
+              mode: 'restore',
+              noteId: pendingRestore.noteId,
+              confirmHash: pendingRestore.backupHash,
+              expectedCurrentHash: pendingRestore.currentHash,
+            });
+            pendingRestore = null;
+            restoreConfirmButton.hidden = true;
+            restorePreview.textContent = '복구가 완료됐습니다. 메모 목록을 다시 불러왔습니다.';
+            authMessage.textContent = '검증된 백업에서 메모를 복구했습니다.';
+            await loadNotes(currentSession);
+          } catch (error) {
+            restorePreview.textContent = error.message;
+          } finally {
+            restoreConfirmButton.disabled = false;
+          }
+        });
+
+        deviceRequestButton.addEventListener('click', async () => {
+          deviceRequestButton.disabled = true;
+          try {
+            const result = await requestNoteApi(currentSession, '/api/device', 'POST', { action: 'request' });
+            authMessage.textContent = '기기 승인을 요청했습니다. 서버의 승인 확인을 기다려 주세요.';
+            deviceState = ['pending', 'approved', 'revoked'].includes(result?.state) ? result.state : 'pending';
+            applyDeviceState();
+            await loadNotes(currentSession);
+          } catch (error) {
+            authMessage.textContent = error.message;
+          } finally {
+            deviceRequestButton.disabled = false;
+          }
+        });
+
+        loginForm.addEventListener('submit', async event => {
+          event.preventDefault();
+          loginButton.disabled = true;
+          authMessage.textContent = '로그인 중입니다.';
+          try {
+            const { error } = await supabase.auth.signInWithPassword({
+              email: document.querySelector('#email').value,
+              password: passwordInput.value,
+            });
+            if (error) throw error;
+            authMessage.textContent = '로그인했습니다.';
+          } catch (error) {
+            authMessage.textContent = `로그인하지 못했습니다: ${error.message || '연결 오류'}`;
+          } finally {
+            passwordInput.value = '';
+            loginButton.disabled = false;
+          }
+        });
+
+        logoutButton.addEventListener('click', async () => {
+          logoutButton.disabled = true;
+          authMessage.textContent = '로그아웃 중입니다.';
+          try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            authMessage.textContent = '로그아웃했습니다.';
+          } catch (error) {
+            authMessage.textContent = `로그아웃하지 못했습니다: ${error.message || '연결 오류'}`;
+          } finally {
+            logoutButton.disabled = false;
+          }
+        });
+      } catch (error) {
+        loginButton.disabled = true;
+        authState.textContent = '로그아웃 상태입니다.';
+        authMessage.textContent = `Supabase 설정 오류: ${error.message || '클라이언트를 초기화하지 못했습니다.'}`;
+        showNotesMessage('로그인 설정 오류로 자료를 표시할 수 없습니다.');
+      }
+    }
+  </script>
+</body>
+</html>
