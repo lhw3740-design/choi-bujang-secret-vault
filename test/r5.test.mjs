@@ -103,11 +103,11 @@ test('third- and fourth-stage attack checks record the unauthenticated API respo
       assert.equal(options.method, 'GET');
       assert.equal(options.redirect, 'error');
       assert.equal('authorization' in options.headers, false);
-      assert.deepEqual(result, {
-        attackId: 'anonymous_note_read',
-        expected: '비로그인 목록 요청이 401 또는 403 JSON 오류로 거부됨',
-        observed: '인증 없는 GET /api/notes: HTTP 401, JSON 오류 응답 확인',
-      });
+      assert.equal(result.attackId, 'anonymous_note_read');
+      assert.equal(result.expected, '비로그인 목록 요청이 401 또는 403 JSON 오류로 거부됨');
+      assert.equal(options.headers['x-attack-id'], 'anonymous_note_read');
+      assert.equal(result.observed,
+        `인증 없는 GET /api/notes: HTTP 401, JSON 오류 응답 확인 (사례 anonymous_note_read, 요청 ID ${options.headers['x-request-id']})`);
     }
   } finally {
     globalThis.fetch = originalFetch;
@@ -140,15 +140,14 @@ test('fifth- and sixth-stage attack checks send anonymous requests to the origin
       assert.equal(requests[1].url, 'https://student-defense.vercel.app/api/notes');
       assert.equal(requests[1].options.method, 'GET');
       assert.equal('authorization' in requests[1].options.headers, false);
-      assert.deepEqual(results, [{
+      assert.deepEqual(results[0], {
         attackId: 'anonymous_original_read',
         expected: 'anon 키의 원본 자료 요청이 권한 오류로 거부됨',
         observed: '익명 원본 GET: HTTP 403, JSON 오류 응답 확인',
-      }, {
-        attackId: 'anonymous_note_read',
-        expected: '비로그인 목록 요청이 401 또는 403 JSON 오류로 거부됨',
-        observed: '인증 없는 GET /api/notes: HTTP 401, JSON 오류 응답 확인',
-      }]);
+      });
+      assert.equal(results[1].attackId, 'anonymous_note_read');
+      assert.match(results[1].observed, /^인증 없는 GET \/api\/notes: HTTP 401, JSON 오류 응답 확인 \(사례 anonymous_note_read, 요청 ID [0-9a-f-]{36}\)$/u);
+      assert.equal(requests[1].options.headers['x-request-id'], results[1].observed.match(/[0-9a-f-]{36}/u)[0]);
     }
   } finally {
     globalThis.fetch = originalFetch;

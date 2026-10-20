@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { supabasePublishableKey } from '../public/supabase-config.js';
 
 // The student changes this check as each stage adds an attack to the same app.
@@ -80,12 +81,15 @@ export async function runAttackChecks(config) {
 // 각 점검은 실제로 보낸 GET 요청 하나이며, observed에는 그 요청이 받은 실제 HTTP 상태를 적는다.
 // 응답을 받지 못했으면(네트워크 오류 등) 결과가 없으므로 not_run으로 적는다.
 async function anonymousGet(app, path, attackId, expected, label) {
+  // 심판 기록과 대조할 수 있도록 사례 ID와 이 요청만의 고유 ID를 요청 헤더와 observed에 함께 남긴다.
+  const requestId = randomUUID();
+  const tag = `사례 ${attackId}, 요청 ID ${requestId}`;
   let response;
   let body;
   try {
     response = await fetch(new URL(path, app), {
       method: 'GET',
-      headers: { accept: 'application/json' },
+      headers: { accept: 'application/json', 'x-request-id': requestId, 'x-attack-id': attackId },
       redirect: 'error',
       signal: AbortSignal.timeout(10000),
     });
@@ -95,14 +99,14 @@ async function anonymousGet(app, path, attackId, expected, label) {
       if (!(error instanceof SyntaxError)) throw error;
     }
   } catch {
-    return { attackId, expected, observed: `not_run: ${label} 응답을 받지 못함` };
+    return { attackId, expected, observed: `not_run: ${label} 응답을 받지 못함 (${tag})` };
   }
   const hasError = typeof body?.error === 'string' && body.error.length > 0;
   const rejected = (response.status === 401 || response.status === 403) && hasError;
   return { attackId, expected,
     observed: rejected
-      ? `${label}: HTTP ${response.status}, JSON 오류 응답 확인`
-      : `${label}: HTTP ${response.status}, ${body === undefined ? 'JSON 오류 응답 아님' : hasError ? 'JSON 오류 응답' : '거부 오류 없는 JSON 응답'}` };
+      ? `${label}: HTTP ${response.status}, JSON 오류 응답 확인 (${tag})`
+      : `${label}: HTTP ${response.status}, ${body === undefined ? 'JSON 오류 응답 아님' : hasError ? 'JSON 오류 응답' : '거부 오류 없는 JSON 응답'} (${tag})` };
 }
 
 function checkAnonymousNotesApi(app) {
