@@ -34,3 +34,19 @@
 2026-10-20T02:21:26.982Z alert wi-15 192.0.2.42 0.52 근거 패턴 불분명
 2026-10-20T02:21:26.982Z alert wi-16 198.51.100.42 0.56 sql_injection_repeat
 2026-10-20T02:21:26.982Z alert wi-17 203.0.113.43 0.52 command_separator_repeat
+2026-10-20T02:25:57.696Z block kc-01 203.0.113.10 0.88 jndi_lookup_in_header
+2026-10-20T02:25:57.696Z block kc-02 203.0.113.10 0.88 jndi_lookup_in_url
+2026-10-20T02:25:57.696Z block kc-03 198.51.100.16 0.9 jndi_lookup_in_url
+2026-10-20T02:25:57.696Z block kc-04 192.0.2.16 0.89 jndi_lookup_in_header
+2026-10-20T02:25:57.696Z block kc-05 203.0.113.24 0.9 jndi_lookup_in_url+known_scanner_trace
+2026-10-20T02:25:57.696Z block kc-06 198.51.100.24 0.9 jndi_lookup_in_url
+2026-10-20T02:25:57.696Z block kc-07 192.0.2.24 0.88 jndi_lookup_in_header
+2026-10-20T02:25:57.696Z block kc-08 203.0.113.31 0.93 jndi_lookup_in_header+jndi_lookup_in_url
+2026-10-20T02:25:57.696Z alert kc-09 192.0.2.45 0.53 jndi_lookup_in_url
+2026-10-20T02:25:57.696Z alert kc-10 198.51.100.45 0.51 jndi_lookup_in_header
+2026-10-20T02:25:57.696Z alert kc-11 203.0.113.45 0.55 jndi_lookup_in_url
+2026-10-20T02:25:57.696Z alert kc-12 192.0.2.46 0.53 jndi_lookup_in_header
+2026-10-20T02:25:57.696Z alert kc-13 198.51.100.46 0.51 known_scanner_trace
+2026-10-20T02:25:57.696Z alert kc-14 203.0.113.46 0.55 jndi_lookup_in_url
+2026-10-20T02:25:57.696Z alert kc-15 192.0.2.47 0.53 jndi_lookup_in_url
+2026-10-20T02:25:57.696Z alert kc-16 198.51.100.47 0.58 jndi_lookup_in_url

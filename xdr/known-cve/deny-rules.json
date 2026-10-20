@@ -1,0 +1,90 @@
+{
+  "schema": "aleph.xdr.deny-rules.v1",
+  "rules": [
+    {
+      "id": "kc-deny-203.0.113.10",
+      "action": "deny",
+      "srcip": "203.0.113.10",
+      "createdAt": "2026-10-20T02:25:57.696Z",
+      "expiresAt": "2026-10-20T03:25:57.696Z",
+      "alertIds": [
+        "kc-01",
+        "kc-02"
+      ],
+      "confidence": 0.88,
+      "reason": "jndi_lookup_in_header"
+    },
+    {
+      "id": "kc-deny-198.51.100.16",
+      "action": "deny",
+      "srcip": "198.51.100.16",
+      "createdAt": "2026-10-20T02:25:57.696Z",
+      "expiresAt": "2026-10-20T03:25:57.696Z",
+      "alertIds": [
+        "kc-03"
+      ],
+      "confidence": 0.9,
+      "reason": "jndi_lookup_in_url"
+    },
+    {
+      "id": "kc-deny-192.0.2.16",
+      "action": "deny",
+      "srcip": "192.0.2.16",
+      "createdAt": "2026-10-20T02:25:57.696Z",
+      "expiresAt": "2026-10-20T03:25:57.696Z",
+      "alertIds": [
+        "kc-04"
+      ],
+      "confidence": 0.89,
+      "reason": "jndi_lookup_in_header"
+    },
+    {
+      "id": "kc-deny-203.0.113.24",
+      "action": "deny",
+      "srcip": "203.0.113.24",
+      "createdAt": "2026-10-20T02:25:57.696Z",
+      "expiresAt": "2026-10-20T03:25:57.696Z",
+      "alertIds": [
+        "kc-05"
+      ],
+      "confidence": 0.9,
+      "reason": "jndi_lookup_in_url+known_scanner_trace"
+    },
+    {
+      "id": "kc-deny-198.51.100.24",
+      "action": "deny",
+      "srcip": "198.51.100.24",
+      "createdAt": "2026-10-20T02:25:57.696Z",
+      "expiresAt": "2026-10-20T03:25:57.696Z",
+      "alertIds": [
+        "kc-06"
+      ],
+      "confidence": 0.9,
+      "reason": "jndi_lookup_in_url"
+    },
+    {
+      "id": "kc-deny-192.0.2.24",
+      "action": "deny",
+      "srcip": "192.0.2.24",
+      "createdAt": "2026-10-20T02:25:57.696Z",
+      "expiresAt": "2026-10-20T03:25:57.696Z",
+      "alertIds": [
+        "kc-07"
+      ],
+      "confidence": 0.88,
+      "reason": "jndi_lookup_in_header"
+    },
+    {
+      "id": "kc-deny-203.0.113.31",
+      "action": "deny",
+      "srcip": "203.0.113.31",
+      "createdAt": "2026-10-20T02:25:57.696Z",
+      "expiresAt": "2026-10-20T03:25:57.696Z",
+      "alertIds": [
+        "kc-08"
+      ],
+      "confidence": 0.93,
+      "reason": "jndi_lookup_in_header+jndi_lookup_in_url"
+    }
+  ]
+}

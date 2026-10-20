@@ -1,0 +1,21 @@
+{
+  "schema": "aleph.xdr.patterns.v1",
+  "source": "CVE-2021-44228 (Log4Shell) 형태 요청, MITRE ATT&CK T1190 (Exploit Public-Facing Application)",
+  "patterns": [
+    {
+      "name": "jndi_lookup_in_header",
+      "condition": "요청 머리글(User-Agent 등) 값에 jndi 원격 조회 구문(${jndi:프로토콜://주소/...})이 완전한 형태로 있음",
+      "evidence": "CVE-2021-44228: 로그에 남는 머리글 값 안의 jndi 조회 구문이 오래된 로그 라이브러리의 원격 조회를 일으키는 형태"
+    },
+    {
+      "name": "jndi_lookup_in_url",
+      "condition": "요청 주소·인자에 jndi 원격 조회 구문이 완전한 형태로 있고, 반복되면 확신을 높임",
+      "evidence": "CVE-2021-44228: 주소 인자 안의 jndi 조회 구문으로 같은 취약점을 노리는 형태(T1190)"
+    },
+    {
+      "name": "known_scanner_trace",
+      "condition": "알려진 취약점 점검 도구의 흔적(점검 주소·도구 이름)이 있고, 위 조회 구문이 함께 있으면 확신을 높임",
+      "evidence": "T1190: 공개된 앱의 알려진 취약점을 점검 도구로 훑은 뒤 악용하는 형태"
+    }
+  ]
+}

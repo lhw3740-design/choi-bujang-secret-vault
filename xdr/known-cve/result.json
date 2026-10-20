@@ -1,0 +1,155 @@
+{
+  "schema": "aleph.xdr.result.v1",
+  "moduleKey": "known-cve",
+  "decisions": [
+    {
+      "alertId": "kc-01",
+      "action": "block",
+      "confidence": 0.88,
+      "reason": "jndi_lookup_in_header"
+    },
+    {
+      "alertId": "kc-02",
+      "action": "block",
+      "confidence": 0.88,
+      "reason": "jndi_lookup_in_url"
+    },
+    {
+      "alertId": "kc-03",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "jndi_lookup_in_url"
+    },
+    {
+      "alertId": "kc-04",
+      "action": "block",
+      "confidence": 0.89,
+      "reason": "jndi_lookup_in_header"
+    },
+    {
+      "alertId": "kc-05",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "jndi_lookup_in_url+known_scanner_trace"
+    },
+    {
+      "alertId": "kc-06",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "jndi_lookup_in_url"
+    },
+    {
+      "alertId": "kc-07",
+      "action": "block",
+      "confidence": 0.88,
+      "reason": "jndi_lookup_in_header"
+    },
+    {
+      "alertId": "kc-08",
+      "action": "block",
+      "confidence": 0.93,
+      "reason": "jndi_lookup_in_header+jndi_lookup_in_url"
+    },
+    {
+      "alertId": "kc-09",
+      "action": "alert",
+      "confidence": 0.53,
+      "reason": "jndi_lookup_in_url"
+    },
+    {
+      "alertId": "kc-10",
+      "action": "alert",
+      "confidence": 0.51,
+      "reason": "jndi_lookup_in_header"
+    },
+    {
+      "alertId": "kc-11",
+      "action": "alert",
+      "confidence": 0.55,
+      "reason": "jndi_lookup_in_url"
+    },
+    {
+      "alertId": "kc-12",
+      "action": "alert",
+      "confidence": 0.53,
+      "reason": "jndi_lookup_in_header"
+    },
+    {
+      "alertId": "kc-13",
+      "action": "alert",
+      "confidence": 0.51,
+      "reason": "known_scanner_trace"
+    },
+    {
+      "alertId": "kc-14",
+      "action": "alert",
+      "confidence": 0.55,
+      "reason": "jndi_lookup_in_url"
+    },
+    {
+      "alertId": "kc-15",
+      "action": "alert",
+      "confidence": 0.53,
+      "reason": "jndi_lookup_in_url"
+    },
+    {
+      "alertId": "kc-16",
+      "action": "alert",
+      "confidence": 0.58,
+      "reason": "jndi_lookup_in_url"
+    },
+    {
+      "alertId": "kc-17",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "알려진 악용 형태가 없는 일반 요청"
+    },
+    {
+      "alertId": "kc-18",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "알려진 악용 형태가 없는 일반 요청"
+    },
+    {
+      "alertId": "kc-19",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "알려진 악용 형태가 없는 일반 요청"
+    },
+    {
+      "alertId": "kc-20",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "알려진 악용 형태가 없는 일반 요청"
+    },
+    {
+      "alertId": "kc-21",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "알려진 악용 형태가 없는 일반 요청"
+    },
+    {
+      "alertId": "kc-22",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "알려진 악용 형태가 없는 일반 요청"
+    },
+    {
+      "alertId": "kc-23",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "알려진 악용 형태가 없는 일반 요청"
+    },
+    {
+      "alertId": "kc-24",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "알려진 악용 형태가 없는 일반 요청"
+    }
+  ],
+  "counts": {
+    "block": 8,
+    "alert": 8,
+    "record": 8
+  }
+}
