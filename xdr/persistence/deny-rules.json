@@ -1,0 +1,90 @@
+{
+  "schema": "aleph.xdr.deny-rules.v1",
+  "rules": [
+    {
+      "id": "ps-deny-203.0.113.12",
+      "action": "deny",
+      "srcip": "203.0.113.12",
+      "createdAt": "2026-10-20T02:31:00.534Z",
+      "expiresAt": "2026-10-20T03:31:00.534Z",
+      "alertIds": [
+        "ps-01",
+        "ps-02"
+      ],
+      "confidence": 0.88,
+      "reason": "unsigned_service_registration"
+    },
+    {
+      "id": "ps-deny-198.51.100.12",
+      "action": "deny",
+      "srcip": "198.51.100.12",
+      "createdAt": "2026-10-20T02:31:00.534Z",
+      "expiresAt": "2026-10-20T03:31:00.534Z",
+      "alertIds": [
+        "ps-03"
+      ],
+      "confidence": 0.88,
+      "reason": "startup_folder_change"
+    },
+    {
+      "id": "ps-deny-192.0.2.12",
+      "action": "deny",
+      "srcip": "192.0.2.12",
+      "createdAt": "2026-10-20T02:31:00.534Z",
+      "expiresAt": "2026-10-20T03:31:00.534Z",
+      "alertIds": [
+        "ps-04"
+      ],
+      "confidence": 0.88,
+      "reason": "unsigned_service_registration"
+    },
+    {
+      "id": "ps-deny-203.0.113.19",
+      "action": "deny",
+      "srcip": "203.0.113.19",
+      "createdAt": "2026-10-20T02:31:00.534Z",
+      "expiresAt": "2026-10-20T03:31:00.534Z",
+      "alertIds": [
+        "ps-05"
+      ],
+      "confidence": 0.88,
+      "reason": "unfamiliar_scheduled_task"
+    },
+    {
+      "id": "ps-deny-198.51.100.19",
+      "action": "deny",
+      "srcip": "198.51.100.19",
+      "createdAt": "2026-10-20T02:31:00.534Z",
+      "expiresAt": "2026-10-20T03:31:00.534Z",
+      "alertIds": [
+        "ps-06"
+      ],
+      "confidence": 0.88,
+      "reason": "unsigned_service_registration"
+    },
+    {
+      "id": "ps-deny-192.0.2.19",
+      "action": "deny",
+      "srcip": "192.0.2.19",
+      "createdAt": "2026-10-20T02:31:00.534Z",
+      "expiresAt": "2026-10-20T03:31:00.534Z",
+      "alertIds": [
+        "ps-07"
+      ],
+      "confidence": 0.88,
+      "reason": "unfamiliar_scheduled_task+startup_folder_change"
+    },
+    {
+      "id": "ps-deny-203.0.113.33",
+      "action": "deny",
+      "srcip": "203.0.113.33",
+      "createdAt": "2026-10-20T02:31:00.534Z",
+      "expiresAt": "2026-10-20T03:31:00.534Z",
+      "alertIds": [
+        "ps-08"
+      ],
+      "confidence": 0.88,
+      "reason": "unsigned_service_registration"
+    }
+  ]
+}

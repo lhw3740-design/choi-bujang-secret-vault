@@ -1,0 +1,155 @@
+{
+  "schema": "aleph.xdr.result.v1",
+  "moduleKey": "persistence",
+  "decisions": [
+    {
+      "alertId": "ps-01",
+      "action": "block",
+      "confidence": 0.88,
+      "reason": "unsigned_service_registration"
+    },
+    {
+      "alertId": "ps-02",
+      "action": "block",
+      "confidence": 0.88,
+      "reason": "unfamiliar_scheduled_task"
+    },
+    {
+      "alertId": "ps-03",
+      "action": "block",
+      "confidence": 0.88,
+      "reason": "startup_folder_change"
+    },
+    {
+      "alertId": "ps-04",
+      "action": "block",
+      "confidence": 0.88,
+      "reason": "unsigned_service_registration"
+    },
+    {
+      "alertId": "ps-05",
+      "action": "block",
+      "confidence": 0.88,
+      "reason": "unfamiliar_scheduled_task"
+    },
+    {
+      "alertId": "ps-06",
+      "action": "block",
+      "confidence": 0.88,
+      "reason": "unsigned_service_registration"
+    },
+    {
+      "alertId": "ps-07",
+      "action": "block",
+      "confidence": 0.88,
+      "reason": "unfamiliar_scheduled_task+startup_folder_change"
+    },
+    {
+      "alertId": "ps-08",
+      "action": "block",
+      "confidence": 0.88,
+      "reason": "unsigned_service_registration"
+    },
+    {
+      "alertId": "ps-09",
+      "action": "alert",
+      "confidence": 0.52,
+      "reason": "unfamiliar_scheduled_task"
+    },
+    {
+      "alertId": "ps-10",
+      "action": "alert",
+      "confidence": 0.54,
+      "reason": "startup_folder_change"
+    },
+    {
+      "alertId": "ps-11",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "unsigned_service_registration"
+    },
+    {
+      "alertId": "ps-12",
+      "action": "alert",
+      "confidence": 0.52,
+      "reason": "unfamiliar_scheduled_task"
+    },
+    {
+      "alertId": "ps-13",
+      "action": "alert",
+      "confidence": 0.59,
+      "reason": "unsigned_service_registration"
+    },
+    {
+      "alertId": "ps-14",
+      "action": "alert",
+      "confidence": 0.52,
+      "reason": "startup_folder_change"
+    },
+    {
+      "alertId": "ps-15",
+      "action": "alert",
+      "confidence": 0.54,
+      "reason": "unfamiliar_scheduled_task"
+    },
+    {
+      "alertId": "ps-16",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "unsigned_service_registration"
+    },
+    {
+      "alertId": "ps-17",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "새로 심어진 지속 항목 단서가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "ps-18",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "새로 심어진 지속 항목 단서가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "ps-19",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "새로 심어진 지속 항목 단서가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "ps-20",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "새로 심어진 지속 항목 단서가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "ps-21",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "새로 심어진 지속 항목 단서가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "ps-22",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "새로 심어진 지속 항목 단서가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "ps-23",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "새로 심어진 지속 항목 단서가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "ps-24",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "새로 심어진 지속 항목 단서가 없는 일반 이벤트"
+    }
+  ],
+  "counts": {
+    "block": 8,
+    "alert": 8,
+    "record": 8
+  }
+}

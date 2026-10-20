@@ -1,0 +1,21 @@
+{
+  "schema": "aleph.xdr.patterns.v1",
+  "source": "MITRE ATT&CK T1543 (Create or Modify System Process), T1053 (Scheduled Task/Job), T1547.001 (Startup Folder)",
+  "patterns": [
+    {
+      "name": "unsigned_service_registration",
+      "condition": "서명 없는 새 서비스가 등록되거나 서비스 실행 파일이 서명 없이 바뀌고, 임시 폴더 실행 파일·평소 목록에 없음·연속 등록이 함께 있음",
+      "evidence": "T1543: 서비스를 만들거나 바꿔 재부팅 뒤에도 악성 프로그램이 다시 실행되게 하는 지속 형태"
+    },
+    {
+      "name": "unfamiliar_scheduled_task",
+      "condition": "처음 보는 예약 작업이 임시 폴더의 프로그램이나 수업 시간 밖·임의 이름으로 실행",
+      "evidence": "T1053: 예약 작업으로 프로그램을 정해진 때마다 실행해 지속하는 형태"
+    },
+    {
+      "name": "startup_folder_change",
+      "condition": "시작 폴더·시작 프로그램에 평소 목록에 없는 프로그램이 추가됨",
+      "evidence": "T1547.001 Startup Folder: 로그온 때마다 실행되도록 시작 폴더에 항목을 넣는 지속 형태(경보는 T1543으로 표기)"
+    }
+  ]
+}
