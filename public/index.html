@@ -40,6 +40,16 @@
     .device { margin: 26px 0; padding: 18px; border: 1px solid #51667c; border-radius: 14px; background: #1a2a3d; }
     .device button { box-sizing: border-box; width: 100%; padding: 11px 12px; border: 1px solid #71879f; border-radius: 8px; font: inherit; color: #101a28; background: #8ad8df; font-weight: 700; cursor: pointer; }
     .device button:disabled { cursor: not-allowed; opacity: .6; }
+    .room { margin: 26px 0; padding: 18px; border: 1px solid #51667c; border-radius: 14px; background: #1a2a3d; }
+    .room[hidden] { display: none; }
+    .room-card { margin: 12px 0; padding: 14px; border: 1px solid #3c5068; border-radius: 10px; background: #14202f; }
+    .room-card h3 { margin: 0 0 8px; font-size: 16px; }
+    .room-card p { margin: 4px 0; font-size: 14px; line-height: 1.5; }
+    .badge { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #101a28; background: #8ad8df; }
+    .badge.unavailable { background: #ffc2cb; }
+    .badge.not_connected { background: #e0b34f; }
+    .room button { box-sizing: border-box; width: 100%; padding: 11px 12px; border: 1px solid #71879f; border-radius: 8px; font: inherit; color: #101a28; background: #8ad8df; font-weight: 700; cursor: pointer; }
+    .room button:disabled { cursor: not-allowed; opacity: .6; }
     ul { list-style: none; display: grid; gap: 12px; padding: 0; }
     li { border: 1px solid #51667c; border-radius: 14px; padding: 17px 19px; background: #1a2a3d; }
     strong { display: block; font-size: 18px; margin-bottom: 5px; }
@@ -72,6 +82,12 @@
       <h2 id="device-heading">기기 승인</h2>
       <p id="device-state" role="status" aria-live="polite">기기 상태를 확인하는 중입니다.</p>
       <button id="device-request-button" type="button" hidden>이 기기 승인 요청</button>
+    </section>
+    <section id="command-room" class="room" aria-labelledby="command-room-heading" hidden>
+      <h2 id="command-room-heading">탈환 작전실</h2>
+      <p id="command-room-status" role="status" aria-live="polite">서버 기록을 불러오는 중입니다.</p>
+      <div id="command-room-cards"></div>
+      <button id="command-room-refresh" type="button">작전실 새로고침</button>
     </section>
     <form id="add-note-form" class="note-form" hidden>
       <h2>가상 메모 추가</h2>
@@ -108,12 +124,17 @@
     const deviceStateText = document.querySelector('#device-state');
     const deviceRequestButton = document.querySelector('#device-request-button');
     const offlineBanner = document.querySelector('#offline-banner');
+    const commandRoom = document.querySelector('#command-room');
+    const commandRoomStatus = document.querySelector('#command-room-status');
+    const commandRoomCards = document.querySelector('#command-room-cards');
+    const commandRoomRefresh = document.querySelector('#command-room-refresh');
     const configured = Boolean(supabaseUrl.trim() && supabasePublishableKey.trim());
     let noteRequestId = 0;
     let currentSession = null;
     let pendingRestore = null;
     let deviceState = 'unknown';
     let deviceCheckId = 0;
+    let commandRoomId = 0;
 
     async function requestNoteApi(session, path, method = 'GET', payload) {
       if (!session?.access_token) throw new Error('로그인이 필요합니다.');
@@ -281,7 +302,10 @@
       deviceRequestButton.hidden = deviceState !== 'unregistered';
       addNoteForm.hidden = !approved;
       restoreNoteForm.hidden = !approved;
+      commandRoom.hidden = !approved;
       if (!approved) {
+        commandRoomId += 1;
+        commandRoomCards.replaceChildren();
         // 승인을 잃거나 아직 확인되지 않으면 목록을 즉시 비우고 진행 중인 자료 요청 결과를 무효화한다.
         noteRequestId += 1;
         showNotesMessage(currentSession?.user
@@ -309,6 +333,75 @@
       deviceState = next;
       applyDeviceState();
       await loadNotes(session);
+      await loadCommandRoom(session);
+    }
+
+    const BADGES = {
+      verified: '서버 응답으로 확인',
+      unavailable: '확인 실패',
+      not_connected: '미실행',
+    };
+
+    function roomCard(title, status, lines) {
+      const card = document.createElement('div');
+      const heading = document.createElement('h3');
+      const badge = document.createElement('span');
+      card.className = 'room-card';
+      heading.textContent = title;
+      badge.className = `badge ${BADGES[status] ? status : 'unavailable'}`;
+      badge.textContent = BADGES[status] || '확인 실패';
+      heading.append(badge);
+      card.append(heading);
+      for (const line of lines) {
+        const row = document.createElement('p');
+        row.textContent = line;
+        card.append(row);
+      }
+      return card;
+    }
+
+    const engineLine = (label, part) => `${label}: ${BADGES[part?.status] || '확인 실패'}${part?.status === 'not_connected' ? ' — 운영 엔진 응답이 연결되지 않아 통과로 세지 않습니다.' : ''}`;
+
+    function renderCommandRoom(data) {
+      const recovery = data.recovery || {};
+      const backups = recovery.noteBackups || {};
+      const backupLines = Array.isArray(backups.items) ? backups.items.map(item =>
+        `백업 ${item.noteIdPrefix}… · ${item.snapshotVersion} · ${item.verifiedAt} · 해시 ${item.hashOk ? '일치' : '불일치'}`) : [];
+      commandRoomCards.replaceChildren(
+        roomCard('판정기 규칙', data.decider?.status, [
+          `구현된 규칙(서버 코드에서 읽음, 실제 판정 결과 아님): ${(data.decider?.ruleIds || []).join(', ') || '없음'}`,
+          engineLine('엔진 판정 기록', data.decider?.engineDecisions),
+        ]),
+        roomCard('탐지 사건', data.detection?.status, [
+          `탐지 함수(${data.detection?.source || 'src/detect.mjs'}): ${data.detection?.status === 'verified' ? '서버에서 확인됨' : '확인 실패'}`,
+          engineLine('엔진 사건 전달', data.detection?.engineEvents),
+        ]),
+        roomCard('회수 상태', data.revocation?.status, [
+          engineLine('접속 회수 집행', data.revocation),
+        ]),
+        roomCard('복구 버전', recovery.status, [
+          `사본 버전: ${recovery.snapshotVersion ?? '확인 못 함'} · 정책 버전: ${recovery.policyVersion ?? '확인 못 함'}`,
+          `현재 설정과 다른 정책 항목: ${(recovery.policyChangedKeys || []).join(', ') || '없음'}`,
+          `내 메모 백업: ${backups.status === 'verified' ? `${backups.count}건` : '확인 실패'}`,
+          ...backupLines,
+        ]),
+      );
+      commandRoomStatus.textContent = `서버 확인 시각: ${data.generatedAt}. 메모 제목과 본문은 표시하지 않습니다.`;
+    }
+
+    async function loadCommandRoom(session) {
+      const requestId = ++commandRoomId;
+      if (deviceState !== 'approved' || !session?.access_token) return;
+      commandRoomStatus.textContent = '서버 기록을 불러오는 중입니다.';
+      try {
+        const data = await requestNoteApi(session, '/api/command-room');
+        if (requestId !== commandRoomId || deviceState !== 'approved') return;
+        renderCommandRoom(data);
+      } catch (error) {
+        if (requestId !== commandRoomId) return;
+        commandRoomCards.replaceChildren();
+        commandRoomStatus.textContent = `작전실 기록을 확인하지 못했습니다: ${error.message}`;
+      }
     }
 
     function showConnectionState() {
@@ -414,6 +507,15 @@
             restorePreview.textContent = error.message;
           } finally {
             restoreConfirmButton.disabled = false;
+          }
+        });
+
+        commandRoomRefresh.addEventListener('click', async () => {
+          commandRoomRefresh.disabled = true;
+          try {
+            await loadCommandRoom(currentSession);
+          } finally {
+            commandRoomRefresh.disabled = false;
           }
         });
 

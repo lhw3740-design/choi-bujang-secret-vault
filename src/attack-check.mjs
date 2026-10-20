@@ -4,7 +4,7 @@ import { supabasePublishableKey } from '../public/supabase-config.js';
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
   if (config.step !== 1 && config.step !== 3 && config.step !== 4
-      && config.step !== 5 && config.step !== 6 && config.step !== 7 && config.step !== 8 && config.step !== 9 && config.step !== 10 && config.step !== 11) {
+      && config.step !== 5 && config.step !== 6 && config.step !== 7 && config.step !== 8 && config.step !== 9 && config.step !== 10 && config.step !== 11 && config.step !== 12) {
     throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   }
   let app;
@@ -58,7 +58,7 @@ export async function runAttackChecks(config) {
     return [originalResult, await checkAnonymousNotesApi(app)];
   }
   if (config.step === 3 || config.step === 4) return [await checkAnonymousNotesApi(app)];
-  if (config.step === 11) return [await checkAnonymousNotesApi(app), await checkAnonymousDeviceApi(app)];
+  if (config.step === 11 || config.step === 12) return [await checkAnonymousNotesApi(app), await checkAnonymousDeviceApi(app)];
   if (typeof config.sampleMarker !== 'string' || !config.sampleMarker) throw new Error('가상 메모의 확인 표시를 넣어 주세요.');
   const response = await fetch(new URL('/data.json', app), {
     redirect: 'error', signal: AbortSignal.timeout(10000),
@@ -77,56 +77,40 @@ export async function runAttackChecks(config) {
     observed: visible ? '비로그인 요청에서 공개 가상 메모 확인 표시가 보임' : `비로그인 요청에서 확인 표시가 보이지 않음 (HTTP ${response.status})` }];
 }
 
-async function checkAnonymousNotesApi(app) {
-  const response = await fetch(new URL('/api/notes', app), {
-    method: 'GET',
-    headers: { accept: 'application/json' },
-    redirect: 'error',
-    signal: AbortSignal.timeout(10000),
-  });
-  const responseText = await response.text();
+// 각 점검은 실제로 보낸 GET 요청 하나이며, observed에는 그 요청이 받은 실제 HTTP 상태를 적는다.
+// 응답을 받지 못했으면(네트워크 오류 등) 결과가 없으므로 not_run으로 적는다.
+async function anonymousGet(app, path, attackId, expected, label) {
+  let response;
   let body;
   try {
-    body = JSON.parse(responseText);
-  } catch (error) {
-    if (!(error instanceof SyntaxError)) throw error;
-    return {
-      attackId: 'anonymous_note_read',
-      expected: '비로그인 목록 요청이 401 또는 403 JSON 오류로 거부됨',
-      observed: `인증 없는 GET /api/notes: HTTP ${response.status}, JSON 오류 응답 아님`,
-    };
+    response = await fetch(new URL(path, app), {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+      redirect: 'error',
+      signal: AbortSignal.timeout(10000),
+    });
+    try {
+      body = JSON.parse(await response.text());
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+    }
+  } catch {
+    return { attackId, expected, observed: `not_run: ${label} 응답을 받지 못함` };
   }
-  const rejected = (response.status === 401 || response.status === 403)
-    && typeof body?.error === 'string' && body.error.length > 0;
-  return {
-    attackId: 'anonymous_note_read',
-    expected: '비로그인 목록 요청이 401 또는 403 JSON 오류로 거부됨',
+  const hasError = typeof body?.error === 'string' && body.error.length > 0;
+  const rejected = (response.status === 401 || response.status === 403) && hasError;
+  return { attackId, expected,
     observed: rejected
-      ? `인증 없는 GET /api/notes: HTTP ${response.status}, JSON 오류 응답 확인`
-      : `인증 없는 GET /api/notes: HTTP ${response.status}, ${typeof body?.error === 'string' ? 'JSON 오류 응답' : '거부 오류 없는 JSON 응답'}`,
-  };
+      ? `${label}: HTTP ${response.status}, JSON 오류 응답 확인`
+      : `${label}: HTTP ${response.status}, ${body === undefined ? 'JSON 오류 응답 아님' : hasError ? 'JSON 오류 응답' : '거부 오류 없는 JSON 응답'}` };
 }
 
-async function checkAnonymousDeviceApi(app) {
-  const expected = '로그인 없는 기기 상태 요청이 401 또는 403 JSON 오류로 거부됨';
-  const response = await fetch(new URL('/api/device', app), {
-    method: 'GET',
-    headers: { accept: 'application/json' },
-    redirect: 'error',
-    signal: AbortSignal.timeout(10000),
-  });
-  let body;
-  try {
-    body = JSON.parse(await response.text());
-  } catch (error) {
-    if (!(error instanceof SyntaxError)) throw error;
-    return { attackId: 'anonymous_device_status', expected,
-      observed: `인증 없는 GET /api/device: HTTP ${response.status}, JSON 오류 응답 아님` };
-  }
-  const rejected = (response.status === 401 || response.status === 403)
-    && typeof body?.error === 'string' && body.error.length > 0;
-  return { attackId: 'anonymous_device_status', expected,
-    observed: rejected
-      ? `인증 없는 GET /api/device: HTTP ${response.status}, JSON 오류 응답 확인`
-      : `인증 없는 GET /api/device: HTTP ${response.status}, 거부 확인 안 됨` };
+function checkAnonymousNotesApi(app) {
+  return anonymousGet(app, '/api/notes', 'anonymous_note_read',
+    '비로그인 목록 요청이 401 또는 403 JSON 오류로 거부됨', '인증 없는 GET /api/notes');
+}
+
+function checkAnonymousDeviceApi(app) {
+  return anonymousGet(app, '/api/device', 'anonymous_device_status',
+    '로그인 없는 기기 상태 요청이 401 또는 403 JSON 오류로 거부됨', '인증 없는 GET /api/device');
 }

@@ -18,7 +18,7 @@ Supabase SQL Editor에서 [학습 자료 테이블 SQL](supabase/migrations/2026
 
 화면은 Supabase 세션의 access token을 `Authorization: Bearer`로 `/api/notes`에 보냅니다. 서버는 기존 `src/verify-login.mjs`를 사용해 Supabase 발급자, `authenticated` 대상, 만료 시각을 검증하고 실패하면 `401` JSON을 반환합니다. 브라우저가 보낸 user ID나 role은 사용하지 않습니다. `aleph.config.json`의 `identityProvider`에는 공개 가능한 issuer, audience, JWKS URL만 기록하며 비밀 키는 포함하지 않습니다.
 
-현재 `aleph.config.json`은 11단계이며 실제 Vercel 앱 URL, Supabase Auth 발급자 설정, 원본 자료 REST 경로를 기록합니다. 빌드된 `/aleph.json`에는 설정된 단계 번호가 반영됩니다.
+현재 `aleph.config.json`은 12단계이며 실제 Vercel 앱 URL, Supabase Auth 발급자 설정, 원본 자료 REST 경로를 기록합니다. 빌드된 `/aleph.json`에는 설정된 단계 번호가 반영됩니다.
 
 로그인한 사용자는 화면에서 가상 메모를 추가·수정·삭제할 수 있습니다. `POST /api/notes`는 `{id?, title, body}`를 받고, `id`가 없으면 서버가 UUID를 만듭니다. `GET /api/notes`는 검증된 사용자 ID의 메모 배열을 반환하고, `GET`, `PUT`, `DELETE /api/notes/:id`는 한 메모를 처리합니다. 데이터베이스 `content` 열은 API의 `body` 필드로 변환됩니다.
 
@@ -82,6 +82,94 @@ on conflict (note_id) do nothing;
 3. Table Editor의 `device_approvals`에서 내 요청 행을 확인하고, 마이그레이션 파일의 승인 예시 SQL로 `approved`로 바꿉니다. 새로고침하면 기존 화면이 열립니다. `revoked`로 바꾸면 다시 닫힙니다.
 
 자동 확인은 `node --test test/device.test.mjs`입니다(모의 DB). 실제 배포·계정·심판 시험을 대신하지 않으며, 실행하지 않은 시험은 미실행으로 남깁니다.
+
+## 12단계: 정상·금지 요청 결과표
+
+`npm run evidence`는 `aleph.config.json`의 실제 배포 주소(`publicAppUrl`)에 요청을 보내 1~11단계의 정상·금지 요청 결과를 한 표로 남깁니다. 표의 열은 단계·구분·시험·**기대 결과**·**실제 API 결과**·판정·**요청 ID**(스크립트가 만들어 `x-request-id`로 보낸 값)·서버 요청 ID(`x-vercel-id`)·**확인 시각**·비고입니다. 결과는 `artifacts/evidence-table.md`와 `.json`에 쓰며 Git에 올리지 않습니다.
+
+- 로그인이 필요한 시험은 시험 계정 A·B가 있어야 합니다. 비밀번호는 터미널에서 입력만 하고 파일·Git·채팅에 남기지 마세요.
+  ```bash
+  read -r -p "A 이메일: " ALEPH_EMAIL_A; read -r -s -p "A 비밀번호: " ALEPH_PASSWORD_A; echo
+  read -r -p "B 이메일: " ALEPH_EMAIL_B; read -r -s -p "B 비밀번호: " ALEPH_PASSWORD_B; echo
+  export ALEPH_EMAIL_A ALEPH_PASSWORD_A ALEPH_EMAIL_B ALEPH_PASSWORD_B
+  npm run evidence
+  ```
+  A의 백업 메모 미리보기까지 확인하려면 `export ALEPH_A_BACKUP_NOTE_ID=<A의 백업 메모 UUID>`를 추가하세요. 계정 정보가 없으면 해당 줄은 **미실행**으로 남고 통과로 세지 않습니다.
+- 표에는 토큰·비밀번호·쿠키·메모 제목과 본문이 들어가지 않습니다. B의 메모 ID는 B 본인의 목록에서 읽어 A가 접근하지 못하는지 확인하는 데만 씁니다.
+- 데이터를 바꾸는 요청(메모 수정·삭제, 실제 복구)은 스크립트가 보내지 않습니다. 판정기·탐지·회수(6~9단계)는 운영 엔진이 호출하므로 이 저장소에서 실제 응답을 받을 수 없어 **미실행**입니다. 승인한 기기 화면은 브라우저에서 직접 확인합니다.
+- **총공세 41종 시험은 이 표로 통과 처리하지 않습니다.** 41종 판정은 심판 결과로만 확인하며, 표의 맨 아래 줄에 미판정으로 적습니다.
+- 스크립트 로직의 자동 시험은 `node --test test/evidence.test.mjs`(모의 서버)이며 실제 배포 결과를 대신하지 않습니다.
+
+## 12단계: 설치·실행·중지·복구 재현 안내
+
+**검사 기준 커밋:** 이 README가 들어 있는 커밋(`HEAD`)입니다. README 안에 자기 커밋 해시를 적을 수 없으므로, 아래 명령으로 확인한 값이 제출 묶음(`artifacts/submission.json`)의 `commit`과 같은지 대조하세요.
+
+```bash
+git log -1 --format="%H %s"
+```
+
+### 학생 몫과 제공 엔진의 구분
+
+두 출처를 섞지 않습니다. **학생 제작물**은 이 저장소의 판정기·탐지 규칙·접속 앱·자료실입니다. **제공 엔진**은 **ALEPH SDP 엔진**(운영 측 서비스)이며 이 저장소에 코드가 없습니다.
+
+| 구분 | 내용 | 위치 |
+|---|---|---|
+| 학생 몫 | 판정기 규칙(`decide`, 규칙 이름 `RULE_IDS`) | `src/decider.mjs` |
+| 학생 몫 | 탐지 규칙(`detect`, 10분 구간 `GET` 120건 초과 시 `burst_read` 회수 **제안**) | `src/detect.mjs` |
+| 학생 몫 | 접속 앱(화면·manifest·오프라인 안내·기기 승인 요청)과 서버 함수 | `public/`, `api/` |
+| 학생 몫 | 자료실 저장소·백업·기기 승인 표, 메모·정책 복구 | `supabase/migrations/`, `src/restore.mjs`, `restore-backup.json` |
+| 학생 몫 | 탈환 작전실 요약과 정상·금지 요청 결과표 | `api/command-room.js`, `src/evidence.mjs`, `scripts/evidence-table.mjs` |
+| 제공: **ALEPH SDP 엔진** | 신원·기기·경로 확인, 판정기 호출, 사건 전달, 접속 회수 집행, 심판 | 운영 측 서비스이며 이 저장소에 코드가 없습니다. 요청·응답 계약은 [docs/DECIDER_REQUEST.md](docs/DECIDER_REQUEST.md), [docs/DETECT_EVENTS.md](docs/DETECT_EVENTS.md)에 있습니다. |
+| 제공: 시작 틀 | 패키징·빌드·제출 묶음 스크립트, 안내 문서, XDR 연습 경보 | `scripts/`, `package/`, `xdr/` (시작 틀 `ChoiTimo/aleph-defense-starter`) |
+
+로컬에서 도는 `decider:test`, `detect:test`, `fixture:7`은 가상 요청 연습이며 ALEPH SDP 엔진의 실제 판정·회수 결과가 아닙니다. 이 저장소만으로는 엔진이 실제로 접속을 회수했는지 확인할 수 없고, `detect`는 회수를 **제안**할 뿐 집행하지 않습니다.
+
+### 설치
+
+1. Node.js 22 이상과 Git이 필요합니다. 저장소를 받고 `npm ci`를 실행합니다(오류 없이 끝나야 합니다).
+2. Supabase SQL Editor에서 마이그레이션을 **이 순서로** 실행합니다.
+   1. `supabase/migrations/20261006063758_create_learning_notes.sql` — 메모 표와 가상 자료
+   2. `supabase/migrations/20261014083000_create_learning_note_backups.sql` — 비공개 백업 표
+   3. `supabase/migrations/20261015060000_create_device_approvals.sql` — 기기 승인 표
+   
+   `20261015010000_create_learning_test_policy_restore.sql`은 정책 복원 연습용 표를 만들며 현재 코드가 사용하지 않습니다.
+3. 비밀값은 저장소에 넣지 않습니다. Vercel **Settings → Environment Variables**에 `SUPABASE_URL`, `SUPABASE_SECRET_KEY`를 직접 입력하고 다시 배포합니다. `public/supabase-config.js`에는 공개되는 Project URL과 publishable key만 둡니다.
+4. 저장소를 Vercel에 연결하면 `npm run build`가 정적 화면(`public`)과 `/aleph.json`을 만듭니다. 서버 함수(`api/`)는 배포 환경에서 확인합니다.
+
+### 실행·확인
+
+```bash
+node --test test/*.test.mjs        # 모의 시험. 실제 배포·계정·엔진 결과를 대신하지 않음
+npm run decider:test               # 가상 판정 연습
+npm run detect:test                # 가상 탐지 연습
+npm run build -- --local           # 정적 화면 로컬 빌드
+npm run evidence                   # 실제 배포 주소에 정상·금지 요청을 보내 결과표 생성
+```
+
+사용 순서: 시험 계정으로 로그인 → **이 기기 승인 요청** → Supabase에서 운영자가 `device_approvals`의 `pending`을 `approved`로 변경(승인 SQL은 마이그레이션 파일에 있음) → 새로고침하면 자료실과 탈환 작전실이 열립니다.
+
+### 중지
+
+- **한 기기 회수:** `update public.device_approvals set status = 'revoked' where id = '<행 id>'::uuid;` 새로고침하면 보호 자료와 작전실이 닫힙니다.
+- **화면에서 나가기:** 로그아웃 버튼. 로그인 세션은 브라우저 저장소에 남기지 않으므로 새로고침하면 다시 로그인해야 합니다.
+- **서버 전체 차단(비상):** Vercel에서 `SUPABASE_SECRET_KEY`를 지우고 재배포하면 서버 함수가 `SERVER_CONFIGURATION_ERROR`로 응답하고 자료를 읽지 않습니다. 키가 노출됐다면 Supabase에서 키를 교체합니다.
+- **설치형 앱:** 서비스 워커는 오프라인 안내 화면만 보관합니다. 브라우저 개발자도구의 Application → Service Workers에서 등록을 해제할 수 있습니다.
+- **엔진의 접속 회수 집행:** ALEPH SDP 엔진 몫입니다. 이 저장소에서는 중지할 수 없습니다.
+
+### 복구
+
+- **메모 한 건:** 침해 전에 신뢰한 사본을 `learning_note_backups`에 넣어 둔 경우에만 가능합니다(위 10단계 설명의 SQL과 순서). 화면에서 **백업과 변경 상태 미리보기**를 확인한 뒤 **확인한 백업으로 이 메모 복구**를 누릅니다. `restore-backup.json`의 고정 지문 검증에 실패하면 DB를 바꾸지 않고 `TRUSTED_BACKUP_UNAVAILABLE`로 멈춥니다.
+- **정책:** `POST /api/restore`의 `mode: "policy"`는 사본 버전과 바뀔 항목만 보여 줍니다(`applied:false`). 배포 서버 파일은 고치지 않으며, 정책을 되돌릴 때는 코드·`aleph.config.json` 변경을 새 커밋으로 만듭니다.
+- **코드 되돌리기:** `git revert <커밋>`을 쓰고 `git reset --hard`는 쓰지 않습니다. 되돌리기 전에 `git status`와 `git diff`로 사라질 내용을 확인합니다.
+
+### 재현 순서와 한계
+
+1. 위 **설치** 1~4단계를 마치고 저장소를 푸시, Vercel 배포가 Ready가 된 것을 확인합니다.
+2. 시험 계정으로 기기를 승인한 뒤 화면에서 자료실과 탈환 작전실을 확인합니다.
+3. `npm run evidence`로 결과표를 만들고 **미실행** 줄을 그대로 둡니다.
+4. 커밋·푸시 후 `npm run bundle`로 제출 묶음을 만들고, `commit` 값이 위 `git log -1` 결과와 같은지 확인합니다.
+
+이 문서는 설치·실행·중지·복구 절차를 설명할 뿐 총공세 41종 방어나 ALEPH SDP 엔진 연동의 통과를 주장하지 않습니다. 실제 판정은 심판 결과로만 확인합니다.
 
 ## 시작 틀의 자동 처리
 
@@ -163,3 +251,5 @@ curl -fsS 'https://실제-배포주소.vercel.app/data.json' |
 [AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다. `src/decider.mjs`와 `src/detect.mjs`의 로컬 시험은 반 엔진이나 운영 심판의 결과가 아닙니다.
 
 11단계 저장점 기록(2026-10-15): 로컬 자동 시험 통과. 실제 배포 기기 승인 시험은 확인한 결과만 이 아래에 기록합니다.
+
+12단계 저장점 기록: `src/attack-check.mjs`의 `anonymous_note_read`(GET /api/notes)와 `anonymous_device_status`(GET /api/device)는 실제로 보낸 요청의 HTTP 상태를 `observed`에 적고, 응답을 받지 못하면 `not_run`을 적습니다. 41종 총공세는 이 저장소에서 실행하지 않았으며 통과로 적지 않습니다.

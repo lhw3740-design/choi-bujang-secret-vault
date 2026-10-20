@@ -7,11 +7,11 @@ const MAX_PENDING_PER_USER = 5;
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 90;
 const STATES = new Set(['pending', 'approved', 'revoked']);
 
-function hashHandle(handle) {
+export function hashHandle(handle) {
   return createHash('sha256').update(handle, 'utf8').digest('hex');
 }
 
-function readHandle(request) {
+export function readHandle(request) {
   const header = request.headers?.cookie;
   if (typeof header !== 'string') return null;
   for (const part of header.split(';')) {
@@ -31,7 +31,7 @@ function setHandleCookie(response, handle) {
     `${COOKIE_NAME}=${handle}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${COOKIE_MAX_AGE_SECONDS}`);
 }
 
-async function findDevice(supabase, ownerId, deviceHash) {
+export async function findDevice(supabase, ownerId, deviceHash) {
   const { data, error } = await supabase.from('device_approvals')
     .select('status')
     .eq('owner_id', ownerId)
