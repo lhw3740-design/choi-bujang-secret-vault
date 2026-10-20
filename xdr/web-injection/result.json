@@ -1,0 +1,167 @@
+{
+  "schema": "aleph.xdr.result.v1",
+  "moduleKey": "web-injection",
+  "decisions": [
+    {
+      "alertId": "wi-01",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "sql_injection_repeat"
+    },
+    {
+      "alertId": "wi-02",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "script_injection_repeat"
+    },
+    {
+      "alertId": "wi-03",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "path_traversal_repeat"
+    },
+    {
+      "alertId": "wi-04",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "sql_injection_repeat"
+    },
+    {
+      "alertId": "wi-05",
+      "action": "block",
+      "confidence": 0.93,
+      "reason": "sql_injection_repeat+script_injection_repeat"
+    },
+    {
+      "alertId": "wi-06",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "command_separator_repeat"
+    },
+    {
+      "alertId": "wi-07",
+      "action": "block",
+      "confidence": 0.91,
+      "reason": "path_traversal_repeat"
+    },
+    {
+      "alertId": "wi-08",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "sql_injection_repeat"
+    },
+    {
+      "alertId": "wi-09",
+      "action": "alert",
+      "confidence": 0.52,
+      "reason": "sql_injection_repeat"
+    },
+    {
+      "alertId": "wi-10",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "sql_injection_repeat"
+    },
+    {
+      "alertId": "wi-11",
+      "action": "alert",
+      "confidence": 0.54,
+      "reason": "script_injection_repeat"
+    },
+    {
+      "alertId": "wi-12",
+      "action": "alert",
+      "confidence": 0.52,
+      "reason": "path_traversal_repeat"
+    },
+    {
+      "alertId": "wi-13",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "근거 패턴 불분명"
+    },
+    {
+      "alertId": "wi-14",
+      "action": "alert",
+      "confidence": 0.54,
+      "reason": "sql_injection_repeat"
+    },
+    {
+      "alertId": "wi-15",
+      "action": "alert",
+      "confidence": 0.52,
+      "reason": "근거 패턴 불분명"
+    },
+    {
+      "alertId": "wi-16",
+      "action": "alert",
+      "confidence": 0.56,
+      "reason": "sql_injection_repeat"
+    },
+    {
+      "alertId": "wi-17",
+      "action": "alert",
+      "confidence": 0.52,
+      "reason": "command_separator_repeat"
+    },
+    {
+      "alertId": "wi-18",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "주입 표기가 없는 일반 요청"
+    },
+    {
+      "alertId": "wi-19",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "주입 표기가 없는 일반 요청"
+    },
+    {
+      "alertId": "wi-20",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "주입 표기가 없는 일반 요청"
+    },
+    {
+      "alertId": "wi-21",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "주입 표기가 없는 일반 요청"
+    },
+    {
+      "alertId": "wi-22",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "주입 표기가 없는 일반 요청"
+    },
+    {
+      "alertId": "wi-23",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "주입 표기가 없는 일반 요청"
+    },
+    {
+      "alertId": "wi-24",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "주입 표기가 없는 일반 요청"
+    },
+    {
+      "alertId": "wi-25",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "주입 표기가 없는 일반 요청"
+    },
+    {
+      "alertId": "wi-26",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "주입 표기가 없는 일반 요청"
+    }
+  ],
+  "counts": {
+    "block": 8,
+    "alert": 9,
+    "record": 9
+  }
+}

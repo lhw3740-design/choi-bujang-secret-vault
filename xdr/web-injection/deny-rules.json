@@ -1,0 +1,90 @@
+{
+  "schema": "aleph.xdr.deny-rules.v1",
+  "rules": [
+    {
+      "id": "wi-deny-203.0.113.10",
+      "action": "deny",
+      "srcip": "203.0.113.10",
+      "createdAt": "2026-10-20T02:21:26.982Z",
+      "expiresAt": "2026-10-20T03:21:26.982Z",
+      "alertIds": [
+        "wi-01",
+        "wi-02"
+      ],
+      "confidence": 0.9,
+      "reason": "sql_injection_repeat"
+    },
+    {
+      "id": "wi-deny-198.51.100.15",
+      "action": "deny",
+      "srcip": "198.51.100.15",
+      "createdAt": "2026-10-20T02:21:26.982Z",
+      "expiresAt": "2026-10-20T03:21:26.982Z",
+      "alertIds": [
+        "wi-03"
+      ],
+      "confidence": 0.9,
+      "reason": "path_traversal_repeat"
+    },
+    {
+      "id": "wi-deny-192.0.2.15",
+      "action": "deny",
+      "srcip": "192.0.2.15",
+      "createdAt": "2026-10-20T02:21:26.982Z",
+      "expiresAt": "2026-10-20T03:21:26.982Z",
+      "alertIds": [
+        "wi-04"
+      ],
+      "confidence": 0.92,
+      "reason": "sql_injection_repeat"
+    },
+    {
+      "id": "wi-deny-203.0.113.18",
+      "action": "deny",
+      "srcip": "203.0.113.18",
+      "createdAt": "2026-10-20T02:21:26.982Z",
+      "expiresAt": "2026-10-20T03:21:26.982Z",
+      "alertIds": [
+        "wi-05"
+      ],
+      "confidence": 0.93,
+      "reason": "sql_injection_repeat+script_injection_repeat"
+    },
+    {
+      "id": "wi-deny-198.51.100.18",
+      "action": "deny",
+      "srcip": "198.51.100.18",
+      "createdAt": "2026-10-20T02:21:26.982Z",
+      "expiresAt": "2026-10-20T03:21:26.982Z",
+      "alertIds": [
+        "wi-06"
+      ],
+      "confidence": 0.9,
+      "reason": "command_separator_repeat"
+    },
+    {
+      "id": "wi-deny-192.0.2.21",
+      "action": "deny",
+      "srcip": "192.0.2.21",
+      "createdAt": "2026-10-20T02:21:26.982Z",
+      "expiresAt": "2026-10-20T03:21:26.982Z",
+      "alertIds": [
+        "wi-07"
+      ],
+      "confidence": 0.91,
+      "reason": "path_traversal_repeat"
+    },
+    {
+      "id": "wi-deny-203.0.113.22",
+      "action": "deny",
+      "srcip": "203.0.113.22",
+      "createdAt": "2026-10-20T02:21:26.982Z",
+      "expiresAt": "2026-10-20T03:21:26.982Z",
+      "alertIds": [
+        "wi-08"
+      ],
+      "confidence": 0.9,
+      "reason": "sql_injection_repeat"
+    }
+  ]
+}

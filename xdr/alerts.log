@@ -17,3 +17,20 @@
 2026-10-20T02:14:58.860Z alert bf-17 192.0.2.52 0.5 burst_same_ip_failures: T1110.001 Password Guessing
 2026-10-20T02:14:58.860Z alert bf-18 198.51.100.52 0.63 burst_same_ip_failures: T1110.001 Password Guessing
 2026-10-20T02:14:58.860Z alert bf-19 203.0.113.52 0.5 burst_same_ip_failures: T1110.001 Password Guessing
+2026-10-20T02:21:26.982Z block wi-01 203.0.113.10 0.9 sql_injection_repeat
+2026-10-20T02:21:26.982Z block wi-02 203.0.113.10 0.9 script_injection_repeat
+2026-10-20T02:21:26.982Z block wi-03 198.51.100.15 0.9 path_traversal_repeat
+2026-10-20T02:21:26.982Z block wi-04 192.0.2.15 0.92 sql_injection_repeat
+2026-10-20T02:21:26.982Z block wi-05 203.0.113.18 0.93 sql_injection_repeat+script_injection_repeat
+2026-10-20T02:21:26.982Z block wi-06 198.51.100.18 0.9 command_separator_repeat
+2026-10-20T02:21:26.982Z block wi-07 192.0.2.21 0.91 path_traversal_repeat
+2026-10-20T02:21:26.982Z block wi-08 203.0.113.22 0.9 sql_injection_repeat
+2026-10-20T02:21:26.982Z alert wi-09 192.0.2.40 0.52 sql_injection_repeat
+2026-10-20T02:21:26.982Z alert wi-10 198.51.100.40 0.5 sql_injection_repeat
+2026-10-20T02:21:26.982Z alert wi-11 203.0.113.41 0.54 script_injection_repeat
+2026-10-20T02:21:26.982Z alert wi-12 192.0.2.41 0.52 path_traversal_repeat
+2026-10-20T02:21:26.982Z alert wi-13 198.51.100.41 0.5 근거 패턴 불분명
+2026-10-20T02:21:26.982Z alert wi-14 203.0.113.42 0.54 sql_injection_repeat
+2026-10-20T02:21:26.982Z alert wi-15 192.0.2.42 0.52 근거 패턴 불분명
+2026-10-20T02:21:26.982Z alert wi-16 198.51.100.42 0.56 sql_injection_repeat
+2026-10-20T02:21:26.982Z alert wi-17 203.0.113.43 0.52 command_separator_repeat

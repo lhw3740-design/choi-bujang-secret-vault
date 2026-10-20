@@ -1,0 +1,26 @@
+{
+  "schema": "aleph.xdr.patterns.v1",
+  "source": "MITRE ATT&CK T1190 (Exploit Public-Facing Application)",
+  "patterns": [
+    {
+      "name": "sql_injection_repeat",
+      "condition": "같은 주소의 요청 인자에 SQL 구문 표기가 8번 이상 반복",
+      "evidence": "T1190: 외부에 공개된 앱의 입력 인자에 SQL을 이어 붙여 앱 취약점을 악용하는 형태"
+    },
+    {
+      "name": "script_injection_repeat",
+      "condition": "같은 주소의 요청 인자에 스크립트 태그·삽입 표기가 8번 이상 반복",
+      "evidence": "T1190: 외부에 공개된 앱의 입력 칸에 스크립트를 밀어 넣어 앱 취약점을 악용하는 형태"
+    },
+    {
+      "name": "path_traversal_repeat",
+      "condition": "같은 주소의 요청 경로에 상위 폴더로 거슬러 올라가는 표기(../)가 8번 이상 반복",
+      "evidence": "T1190: 공개된 앱의 파일 경로 인자를 이용해 허용 범위 밖 자료를 노리는 형태"
+    },
+    {
+      "name": "command_separator_repeat",
+      "condition": "같은 주소의 연속 요청 인자에 명령 구분자 표기가 8번 이상 반복",
+      "evidence": "T1190: 공개된 앱의 입력 인자에 명령을 이어 붙여 앱 취약점을 악용하는 형태"
+    }
+  ]
+}
