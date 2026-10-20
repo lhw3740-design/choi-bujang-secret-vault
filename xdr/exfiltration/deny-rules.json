@@ -1,0 +1,103 @@
+{
+  "schema": "aleph.xdr.deny-rules.v1",
+  "rules": [
+    {
+      "id": "ex-deny-203.0.113.50",
+      "action": "deny",
+      "dstip": "203.0.113.50",
+      "createdAt": "2026-10-20T02:41:36.546Z",
+      "expiresAt": "2026-10-20T03:41:36.546Z",
+      "alertIds": [
+        "ex-01",
+        "ex-03"
+      ],
+      "confidence": 0.92,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "id": "ex-deny-198.51.100.40",
+      "action": "deny",
+      "dstip": "198.51.100.40",
+      "createdAt": "2026-10-20T02:41:36.546Z",
+      "expiresAt": "2026-10-20T03:41:36.546Z",
+      "alertIds": [
+        "ex-02",
+        "ex-04"
+      ],
+      "confidence": 0.95,
+      "reason": "large_transfer_new_destination+archive_exfil_off_hours"
+    },
+    {
+      "id": "ex-deny-203.0.113.55",
+      "action": "deny",
+      "dstip": "203.0.113.55",
+      "createdAt": "2026-10-20T02:41:36.546Z",
+      "expiresAt": "2026-10-20T03:41:36.546Z",
+      "alertIds": [
+        "ex-05"
+      ],
+      "confidence": 0.9,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "id": "ex-deny-192.0.2.90",
+      "action": "deny",
+      "dstip": "192.0.2.90",
+      "createdAt": "2026-10-20T02:41:36.546Z",
+      "expiresAt": "2026-10-20T03:41:36.546Z",
+      "alertIds": [
+        "ex-06"
+      ],
+      "confidence": 0.92,
+      "reason": "command_channel_repeated_transfer"
+    },
+    {
+      "id": "ex-deny-198.51.100.45",
+      "action": "deny",
+      "dstip": "198.51.100.45",
+      "createdAt": "2026-10-20T02:41:36.546Z",
+      "expiresAt": "2026-10-20T03:41:36.546Z",
+      "alertIds": [
+        "ex-07"
+      ],
+      "confidence": 0.92,
+      "reason": "large_transfer_new_destination+archive_exfil_off_hours"
+    },
+    {
+      "id": "ex-deny-203.0.113.60",
+      "action": "deny",
+      "dstip": "203.0.113.60",
+      "createdAt": "2026-10-20T02:41:36.546Z",
+      "expiresAt": "2026-10-20T03:41:36.546Z",
+      "alertIds": [
+        "ex-08"
+      ],
+      "confidence": 0.89,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "id": "ex-deny-203.0.113.61",
+      "action": "deny",
+      "dstip": "203.0.113.61",
+      "createdAt": "2026-10-20T02:41:36.546Z",
+      "expiresAt": "2026-10-20T03:41:36.546Z",
+      "alertIds": [
+        "ex-09"
+      ],
+      "confidence": 0.9,
+      "reason": "large_transfer_new_destination+command_channel_repeated_transfer"
+    },
+    {
+      "id": "ex-deny-198.51.100.46",
+      "action": "deny",
+      "dstip": "198.51.100.46",
+      "createdAt": "2026-10-20T02:41:36.546Z",
+      "expiresAt": "2026-10-20T03:41:36.546Z",
+      "alertIds": [
+        "ex-10"
+      ],
+      "confidence": 0.92,
+      "reason": "large_transfer_new_destination+archive_exfil_off_hours"
+    }
+  ]
+}

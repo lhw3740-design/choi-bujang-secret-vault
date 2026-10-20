@@ -1,0 +1,191 @@
+{
+  "schema": "aleph.xdr.result.v1",
+  "moduleKey": "exfiltration",
+  "decisions": [
+    {
+      "alertId": "ex-01",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "alertId": "ex-02",
+      "action": "block",
+      "confidence": 0.95,
+      "reason": "large_transfer_new_destination+archive_exfil_off_hours"
+    },
+    {
+      "alertId": "ex-03",
+      "action": "block",
+      "confidence": 0.87,
+      "reason": "command_channel_repeated_transfer"
+    },
+    {
+      "alertId": "ex-04",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "alertId": "ex-05",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "alertId": "ex-06",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "command_channel_repeated_transfer"
+    },
+    {
+      "alertId": "ex-07",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "large_transfer_new_destination+archive_exfil_off_hours"
+    },
+    {
+      "alertId": "ex-08",
+      "action": "block",
+      "confidence": 0.89,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "alertId": "ex-09",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "large_transfer_new_destination+command_channel_repeated_transfer"
+    },
+    {
+      "alertId": "ex-10",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "large_transfer_new_destination+archive_exfil_off_hours"
+    },
+    {
+      "alertId": "ex-11",
+      "action": "alert",
+      "confidence": 0.52,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "alertId": "ex-12",
+      "action": "alert",
+      "confidence": 0.54,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "alertId": "ex-13",
+      "action": "alert",
+      "confidence": 0.52,
+      "reason": "archive_exfil_off_hours"
+    },
+    {
+      "alertId": "ex-14",
+      "action": "alert",
+      "confidence": 0.54,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "alertId": "ex-15",
+      "action": "alert",
+      "confidence": 0.56,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "alertId": "ex-16",
+      "action": "alert",
+      "confidence": 0.52,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "alertId": "ex-17",
+      "action": "alert",
+      "confidence": 0.54,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "alertId": "ex-18",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "large_transfer_new_destination"
+    },
+    {
+      "alertId": "ex-19",
+      "action": "alert",
+      "confidence": 0.52,
+      "reason": "command_channel_repeated_transfer"
+    },
+    {
+      "alertId": "ex-20",
+      "action": "alert",
+      "confidence": 0.56,
+      "reason": "archive_exfil_off_hours"
+    },
+    {
+      "alertId": "ex-21",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "평소 목적지로 가는 작은 일반 전송"
+    },
+    {
+      "alertId": "ex-22",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "평소 목적지로 가는 작은 일반 전송"
+    },
+    {
+      "alertId": "ex-23",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "평소 목적지로 가는 작은 일반 전송"
+    },
+    {
+      "alertId": "ex-24",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "평소 목적지로 가는 작은 일반 전송"
+    },
+    {
+      "alertId": "ex-25",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "평소 목적지로 가는 작은 일반 전송"
+    },
+    {
+      "alertId": "ex-26",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "평소 목적지로 가는 작은 일반 전송"
+    },
+    {
+      "alertId": "ex-27",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "평소 목적지로 가는 작은 일반 전송"
+    },
+    {
+      "alertId": "ex-28",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "평소 목적지로 가는 작은 일반 전송"
+    },
+    {
+      "alertId": "ex-29",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "평소 목적지로 가는 작은 일반 전송"
+    },
+    {
+      "alertId": "ex-30",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "평소 목적지로 가는 작은 일반 전송"
+    }
+  ],
+  "counts": {
+    "block": 10,
+    "alert": 10,
+    "record": 10
+  }
+}

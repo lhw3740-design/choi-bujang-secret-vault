@@ -1,0 +1,21 @@
+{
+  "schema": "aleph.xdr.patterns.v1",
+  "source": "MITRE ATT&CK T1041 (Exfiltration Over C2 Channel), T1048 (Exfiltration Over Alternative Protocol)",
+  "patterns": [
+    {
+      "name": "large_transfer_new_destination",
+      "condition": "처음 보는 목적지(또는 평소 쓰지 않던 포트)로 50MB 이상 대용량 전송이 나가고, 파일이 많거나 자료실 전체를 복사함",
+      "evidence": "T1048: 평소 쓰지 않는 경로·목적지로 자료를 한꺼번에 내보내는 유출 형태"
+    },
+    {
+      "name": "archive_exfil_off_hours",
+      "condition": "수업·업무 시간 밖에 압축 파일이 처음 보는 주소로 나가거나 압축 파일이 연속으로 올라감",
+      "evidence": "T1048: 자료를 압축해 묶은 뒤 눈에 덜 띄는 시간에 반출하는 유출 형태"
+    },
+    {
+      "name": "command_channel_repeated_transfer",
+      "condition": "같은 목적지로 대용량 전송이 8번 이상 반복되거나 명령 통로로 큰 파일이 반복 전송됨",
+      "evidence": "T1041: 공격자가 쓰는 명령 통로로 자료를 나눠 반복해서 빼내는 유출 형태"
+    }
+  ]
+}

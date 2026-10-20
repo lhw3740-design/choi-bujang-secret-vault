@@ -83,3 +83,23 @@
 2026-10-20T02:35:39.699Z alert pv-15 203.0.113.55 0.52 admin_group_added
 2026-10-20T02:35:39.699Z alert pv-16 192.0.2.56 0.54 unfamiliar_admin_command
 2026-10-20T02:35:39.699Z alert pv-17 198.51.100.56 0.5 admin_group_added
+2026-10-20T02:41:36.546Z block ex-01 203.0.113.50 0.92 large_transfer_new_destination
+2026-10-20T02:41:36.546Z block ex-02 198.51.100.40 0.95 large_transfer_new_destination+archive_exfil_off_hours
+2026-10-20T02:41:36.546Z block ex-03 203.0.113.50 0.87 command_channel_repeated_transfer
+2026-10-20T02:41:36.546Z block ex-04 198.51.100.40 0.92 large_transfer_new_destination
+2026-10-20T02:41:36.546Z block ex-05 203.0.113.55 0.9 large_transfer_new_destination
+2026-10-20T02:41:36.546Z block ex-06 192.0.2.90 0.92 command_channel_repeated_transfer
+2026-10-20T02:41:36.546Z block ex-07 198.51.100.45 0.92 large_transfer_new_destination+archive_exfil_off_hours
+2026-10-20T02:41:36.546Z block ex-08 203.0.113.60 0.89 large_transfer_new_destination
+2026-10-20T02:41:36.546Z block ex-09 203.0.113.61 0.9 large_transfer_new_destination+command_channel_repeated_transfer
+2026-10-20T02:41:36.546Z block ex-10 198.51.100.46 0.92 large_transfer_new_destination+archive_exfil_off_hours
+2026-10-20T02:41:36.546Z alert ex-11 192.0.2.80 0.52 large_transfer_new_destination
+2026-10-20T02:41:36.546Z alert ex-12 198.51.100.80 0.54 large_transfer_new_destination
+2026-10-20T02:41:36.546Z alert ex-13  0.52 archive_exfil_off_hours
+2026-10-20T02:41:36.546Z alert ex-14 203.0.113.80 0.54 large_transfer_new_destination
+2026-10-20T02:41:36.546Z alert ex-15 192.0.2.81 0.56 large_transfer_new_destination
+2026-10-20T02:41:36.546Z alert ex-16 198.51.100.81 0.52 large_transfer_new_destination
+2026-10-20T02:41:36.546Z alert ex-17 192.0.2.10 0.54 large_transfer_new_destination
+2026-10-20T02:41:36.546Z alert ex-18 203.0.113.81 0.5 large_transfer_new_destination
+2026-10-20T02:41:36.546Z alert ex-19 198.51.100.82 0.52 command_channel_repeated_transfer
+2026-10-20T02:41:36.546Z alert ex-20 203.0.113.82 0.56 archive_exfil_off_hours
