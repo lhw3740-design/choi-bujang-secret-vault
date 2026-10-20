@@ -1,0 +1,110 @@
+{
+  "schema": "aleph.xdr.deny-rules.v1",
+  "rules": [
+    {
+      "id": "pv-deny-user01@203.0.113.11",
+      "action": "revoke_session",
+      "srcuser": "user01",
+      "srcip": "203.0.113.11",
+      "createdAt": "2026-10-20T02:35:39.699Z",
+      "expiresAt": "2026-10-20T03:35:39.699Z",
+      "alertIds": [
+        "pv-01",
+        "pv-02"
+      ],
+      "confidence": 0.88,
+      "reason": "admin_group_added"
+    },
+    {
+      "id": "pv-deny-user02@198.51.100.11",
+      "action": "revoke_session",
+      "srcuser": "user02",
+      "srcip": "198.51.100.11",
+      "createdAt": "2026-10-20T02:35:39.699Z",
+      "expiresAt": "2026-10-20T03:35:39.699Z",
+      "alertIds": [
+        "pv-03"
+      ],
+      "confidence": 0.92,
+      "reason": "unfamiliar_admin_command+off_hours_privilege_use"
+    },
+    {
+      "id": "pv-deny-user03@192.0.2.11",
+      "action": "revoke_session",
+      "srcuser": "user03",
+      "srcip": "192.0.2.11",
+      "createdAt": "2026-10-20T02:35:39.699Z",
+      "expiresAt": "2026-10-20T03:35:39.699Z",
+      "alertIds": [
+        "pv-04"
+      ],
+      "confidence": 0.92,
+      "reason": "admin_group_added+unfamiliar_admin_command"
+    },
+    {
+      "id": "pv-deny-user04@203.0.113.17",
+      "action": "revoke_session",
+      "srcuser": "user04",
+      "srcip": "203.0.113.17",
+      "createdAt": "2026-10-20T02:35:39.699Z",
+      "expiresAt": "2026-10-20T03:35:39.699Z",
+      "alertIds": [
+        "pv-05"
+      ],
+      "confidence": 0.88,
+      "reason": "admin_group_added"
+    },
+    {
+      "id": "pv-deny-user05@198.51.100.17",
+      "action": "revoke_session",
+      "srcuser": "user05",
+      "srcip": "198.51.100.17",
+      "createdAt": "2026-10-20T02:35:39.699Z",
+      "expiresAt": "2026-10-20T03:35:39.699Z",
+      "alertIds": [
+        "pv-06"
+      ],
+      "confidence": 0.88,
+      "reason": "admin_group_added"
+    },
+    {
+      "id": "pv-deny-user06@192.0.2.17",
+      "action": "revoke_session",
+      "srcuser": "user06",
+      "srcip": "192.0.2.17",
+      "createdAt": "2026-10-20T02:35:39.699Z",
+      "expiresAt": "2026-10-20T03:35:39.699Z",
+      "alertIds": [
+        "pv-07"
+      ],
+      "confidence": 0.92,
+      "reason": "admin_group_added+unfamiliar_admin_command+off_hours_privilege_use"
+    },
+    {
+      "id": "pv-deny-user07@203.0.113.27",
+      "action": "revoke_session",
+      "srcuser": "user07",
+      "srcip": "203.0.113.27",
+      "createdAt": "2026-10-20T02:35:39.699Z",
+      "expiresAt": "2026-10-20T03:35:39.699Z",
+      "alertIds": [
+        "pv-08"
+      ],
+      "confidence": 0.88,
+      "reason": "unfamiliar_admin_command"
+    },
+    {
+      "id": "pv-deny-user08@198.51.100.27",
+      "action": "revoke_session",
+      "srcuser": "user08",
+      "srcip": "198.51.100.27",
+      "createdAt": "2026-10-20T02:35:39.699Z",
+      "expiresAt": "2026-10-20T03:35:39.699Z",
+      "alertIds": [
+        "pv-09"
+      ],
+      "confidence": 0.92,
+      "reason": "admin_group_added"
+    }
+  ]
+}

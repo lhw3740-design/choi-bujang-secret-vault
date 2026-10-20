@@ -1,0 +1,21 @@
+{
+  "schema": "aleph.xdr.patterns.v1",
+  "source": "MITRE ATT&CK T1068 (Exploitation for Privilege Escalation), T1078 (Valid Accounts)",
+  "patterns": [
+    {
+      "name": "admin_group_added",
+      "condition": "평범한 계정이 관리자 그룹에 추가되거나(처음 보는 주소·여러 계정 동시·빠졌다 다시 들어옴) 관리자 권한으로 바뀜",
+      "evidence": "T1078: 정상 계정을 얻은 공격자가 관리자 권한을 붙여 더 깊이 들어가는 형태"
+    },
+    {
+      "name": "unfamiliar_admin_command",
+      "condition": "방금 권한을 얻은 계정이거나 처음 보는 주소·다른 계정의 권한으로 관리자 명령을 실행",
+      "evidence": "T1068: 권한 상승을 악용해 평소에 쓰지 않던 관리자 명령을 실행하는 형태"
+    },
+    {
+      "name": "off_hours_privilege_use",
+      "condition": "수업·업무 시간 밖에 관리자 그룹 추가나 관리자 명령이 일어남",
+      "evidence": "T1078: 정상 계정을 도용한 접속은 평소 이용 시간 밖에 권한을 쓰는 경우가 많음"
+    }
+  ]
+}
