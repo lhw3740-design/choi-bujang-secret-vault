@@ -1,0 +1,179 @@
+{
+  "schema": "aleph.xdr.result.v1",
+  "moduleKey": "brute-force",
+  "decisions": [
+    {
+      "alertId": "bf-01",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-02",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "password_spray_multi_account: T1110.003 Password Spraying"
+    },
+    {
+      "alertId": "bf-03",
+      "action": "block",
+      "confidence": 0.93,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-04",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-05",
+      "action": "block",
+      "confidence": 0.88,
+      "reason": "password_spray_multi_account: T1110.003 Password Spraying"
+    },
+    {
+      "alertId": "bf-06",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-07",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "password_mutation_guessing: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-08",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-09",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "password_spray_multi_account: T1110.003 Password Spraying"
+    },
+    {
+      "alertId": "bf-10",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-11",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-12",
+      "action": "alert",
+      "confidence": 0.62,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-13",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-14",
+      "action": "alert",
+      "confidence": 0.61,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-15",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-16",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-17",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-18",
+      "action": "alert",
+      "confidence": 0.63,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-19",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "alertId": "bf-20",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "로그인 실패가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "bf-21",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "로그인 실패가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "bf-22",
+      "action": "record",
+      "confidence": 0.2,
+      "reason": "실패가 적어 패턴에 맞지 않음"
+    },
+    {
+      "alertId": "bf-23",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "로그인 실패가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "bf-24",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "로그인 실패가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "bf-25",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "로그인 실패가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "bf-26",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "로그인 실패가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "bf-27",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "로그인 실패가 없는 일반 이벤트"
+    },
+    {
+      "alertId": "bf-28",
+      "action": "record",
+      "confidence": 0.1,
+      "reason": "로그인 실패가 없는 일반 이벤트"
+    }
+  ],
+  "counts": {
+    "block": 10,
+    "alert": 9,
+    "record": 9
+  }
+}

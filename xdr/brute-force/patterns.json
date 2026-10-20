@@ -1,0 +1,21 @@
+{
+  "schema": "aleph.xdr.patterns.v1",
+  "source": "MITRE ATT&CK T1110 (Brute Force)",
+  "patterns": [
+    {
+      "name": "burst_same_ip_failures",
+      "condition": "짧은 시간 같은 주소·같은 계정의 로그인 실패가 30건 이상 연속",
+      "evidence": "T1110.001 Password Guessing: 한 계정에 비밀번호를 반복 대입해 맞추는 형태"
+    },
+    {
+      "name": "password_spray_multi_account",
+      "condition": "같은 주소가 여러 계정(8개 이상)에 같은 비밀번호를 연속으로 대입",
+      "evidence": "T1110.003 Password Spraying: 흔한 비밀번호 하나를 많은 계정에 시도해 잠금을 피하는 형태"
+    },
+    {
+      "name": "password_mutation_guessing",
+      "condition": "비밀번호를 한 글자씩 바꿔 가며 실패가 15건 이상 이어짐",
+      "evidence": "T1110.001 Password Guessing: 변형 후보를 차례로 대입하는 추측 형태"
+    }
+  ]
+}

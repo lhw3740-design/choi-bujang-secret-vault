@@ -1,0 +1,114 @@
+{
+  "schema": "aleph.xdr.deny-rules.v1",
+  "rules": [
+    {
+      "id": "bf-deny-203.0.113.10",
+      "action": "deny",
+      "srcip": "203.0.113.10",
+      "createdAt": "2026-10-20T02:14:58.860Z",
+      "expiresAt": "2026-10-20T03:14:58.860Z",
+      "alertIds": [
+        "bf-01",
+        "bf-02"
+      ],
+      "confidence": 0.92,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "id": "bf-deny-198.51.100.20",
+      "action": "deny",
+      "srcip": "198.51.100.20",
+      "createdAt": "2026-10-20T02:14:58.860Z",
+      "expiresAt": "2026-10-20T03:14:58.860Z",
+      "alertIds": [
+        "bf-03"
+      ],
+      "confidence": 0.93,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "id": "bf-deny-192.0.2.30",
+      "action": "deny",
+      "srcip": "192.0.2.30",
+      "createdAt": "2026-10-20T02:14:58.860Z",
+      "expiresAt": "2026-10-20T03:14:58.860Z",
+      "alertIds": [
+        "bf-04"
+      ],
+      "confidence": 0.92,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "id": "bf-deny-203.0.113.21",
+      "action": "deny",
+      "srcip": "203.0.113.21",
+      "createdAt": "2026-10-20T02:14:58.860Z",
+      "expiresAt": "2026-10-20T03:14:58.860Z",
+      "alertIds": [
+        "bf-05"
+      ],
+      "confidence": 0.88,
+      "reason": "password_spray_multi_account: T1110.003 Password Spraying"
+    },
+    {
+      "id": "bf-deny-198.51.100.44",
+      "action": "deny",
+      "srcip": "198.51.100.44",
+      "createdAt": "2026-10-20T02:14:58.860Z",
+      "expiresAt": "2026-10-20T03:14:58.860Z",
+      "alertIds": [
+        "bf-06"
+      ],
+      "confidence": 0.92,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "id": "bf-deny-203.0.113.15",
+      "action": "deny",
+      "srcip": "203.0.113.15",
+      "createdAt": "2026-10-20T02:14:58.860Z",
+      "expiresAt": "2026-10-20T03:14:58.860Z",
+      "alertIds": [
+        "bf-07"
+      ],
+      "confidence": 0.9,
+      "reason": "password_mutation_guessing: T1110.001 Password Guessing"
+    },
+    {
+      "id": "bf-deny-192.0.2.18",
+      "action": "deny",
+      "srcip": "192.0.2.18",
+      "createdAt": "2026-10-20T02:14:58.860Z",
+      "expiresAt": "2026-10-20T03:14:58.860Z",
+      "alertIds": [
+        "bf-08"
+      ],
+      "confidence": 0.92,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    },
+    {
+      "id": "bf-deny-198.51.100.8",
+      "action": "deny",
+      "srcip": "198.51.100.8",
+      "createdAt": "2026-10-20T02:14:58.860Z",
+      "expiresAt": "2026-10-20T03:14:58.860Z",
+      "alertIds": [
+        "bf-09"
+      ],
+      "confidence": 0.9,
+      "reason": "password_spray_multi_account: T1110.003 Password Spraying"
+    },
+    {
+      "id": "bf-deny-203.0.113.40",
+      "action": "deny",
+      "srcip": "203.0.113.40",
+      "createdAt": "2026-10-20T02:14:58.860Z",
+      "expiresAt": "2026-10-20T03:14:58.860Z",
+      "alertIds": [
+        "bf-10"
+      ],
+      "confidence": 0.92,
+      "reason": "burst_same_ip_failures: T1110.001 Password Guessing"
+    }
+  ]
+}
